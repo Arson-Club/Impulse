@@ -137,6 +137,10 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
         }
     }
 
+    override fun isRunning(): Boolean {
+        return _getContainerStatus() == "running"
+    }
+
     override fun startServer(): Result<Unit> {
         return when (_getContainerStatus()) {
             "running" -> Result.success(Unit)
@@ -198,6 +202,9 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
                         stopTimeout = config.stopTimeout
                         startupTimeout = config.startupTimeout
                         _createContainer()
+                        if (it.state.status == "running" ) {
+                            _startContainer()
+                        }
                     })
                 }
             }

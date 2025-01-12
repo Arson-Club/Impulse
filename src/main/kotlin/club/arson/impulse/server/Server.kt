@@ -47,9 +47,11 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
         )
     }
 
+    fun isRunning() = broker.isRunning()
+
     fun scheduleStop(delay: Long = config.inactiveTimeout): Result<Server> {
-        if (delay > 0 && shutdownTask == null) {
-            logger?.info("Server ${serverRef.serverInfo.name} has no players, scheduling shutdown")
+        if (delay > 0 && shutdownTask == null && isRunning()) {
+            logger?.debug("Server ${serverRef.serverInfo.name} has no players, scheduling shutdown")
             shutdownTask = proxyServer
                 .scheduler
                 .buildTask(plugin, Runnable {

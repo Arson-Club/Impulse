@@ -192,11 +192,14 @@ scale deployments. This broker is still a work in progress and not yet available
 - [x] ~~Add player count reconciliation and shutdown scheduling~~
 - [x] ~~change banner logic slightly~~
 - [x] ~~/warm command~~
+- [x] ~~create config dir if missing~~
+- [x] ~~add additional commands~~
+- [x] ~~put commands under /impulse~~
+- [x] ~~only restart previously running servers after reconciliation~~
+- [ ] /status command
+- [ ] /reconcile command
 - [ ] Fix checks to immediately reconcile if server is offline
 - [ ] Add mechanism for offline reconciliation
-- [ ] Add server locks
-- [ ] only restart previously running servers after reconciliation
-- [ ] create config if missing
-- [ ] /reconcile command
 - [ ] reconcile timer (nightly)
 - [ ] write a better description
+- [ ] add message to /server command transfers

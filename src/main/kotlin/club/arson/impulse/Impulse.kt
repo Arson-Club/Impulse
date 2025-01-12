@@ -1,6 +1,6 @@
-package club.arson.impulse;
+package club.arson.impulse
 
-import club.arson.impulse.commands.createWarmServerCommand
+import club.arson.impulse.commands.createImpulseCommand
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
@@ -12,10 +12,6 @@ import club.arson.impulse.config.ConfigManager
 import club.arson.impulse.server.ServerManager
 import org.slf4j.Logger
 import java.nio.file.Path
-
-/*
- * Things to do:
- */
 
 @Plugin(
     id = "impulse",
@@ -36,13 +32,11 @@ class Impulse @Inject constructor(val proxy: ProxyServer, val logger: Logger, @D
 
         // Register custom commands
         val commandManager = proxy.commandManager
-
-        // Register the /warm-server command
-        val warmServerMeta = commandManager.metaBuilder("warm-server")
-            .aliases("warm")
+        val impulseCommandMeta = commandManager.metaBuilder("impulse")
+            .aliases("imp")
             .plugin(this)
             .build()
-        commandManager.register(warmServerMeta, createWarmServerCommand(proxy))
+        commandManager.register(impulseCommandMeta, createImpulseCommand())
     }
 
     @Subscribe

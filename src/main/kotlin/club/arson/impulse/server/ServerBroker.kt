@@ -13,6 +13,8 @@ interface ServerBroker {
             }
     }
 
+    fun isRunning(): Boolean
+
     fun startServer(): Result<Unit>
 
     fun stopServer(): Result<Unit>

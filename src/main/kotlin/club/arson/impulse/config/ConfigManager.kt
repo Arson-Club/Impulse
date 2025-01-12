@@ -10,6 +10,8 @@ import com.velocitypowered.api.scheduler.ScheduledTask
 import org.slf4j.Logger
 import java.nio.file.*
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
 
@@ -24,6 +26,9 @@ class ConfigManager(val proxy: ProxyServer, plugin: Impulse, val configDirectory
 
     init {
         _watchTask = proxy.scheduler.buildTask(plugin, this::_watchTask).repeat(5, TimeUnit.SECONDS).schedule()
+        if(!configDirectory.exists()) {
+            configDirectory.createDirectories()
+        }
         configDirectory.register(
             _watchService,
             StandardWatchEventKinds.ENTRY_MODIFY,
