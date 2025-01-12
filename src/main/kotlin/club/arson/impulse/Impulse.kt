@@ -1,5 +1,6 @@
 package club.arson.impulse;
 
+import club.arson.impulse.commands.createWarmServerCommand
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
@@ -32,6 +33,16 @@ class Impulse @Inject constructor(val proxy: ProxyServer, val logger: Logger, @D
         ServiceRegistry.instance.configManager = ConfigManager(proxy, this, dataDirectory, logger)
         ServiceRegistry.instance.serverManager = ServerManager(proxy, this, logger)
         proxy.eventManager.register(this, PlayerLifecycleListener(logger))
+
+        // Register custom commands
+        val commandManager = proxy.commandManager
+
+        // Register the /warm-server command
+        val warmServerMeta = commandManager.metaBuilder("warm-server")
+            .aliases("warm")
+            .plugin(this)
+            .build()
+        commandManager.register(warmServerMeta, createWarmServerCommand(proxy))
     }
 
     @Subscribe

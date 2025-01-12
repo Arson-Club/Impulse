@@ -189,14 +189,14 @@ Kubernetes is an advanced orchestration platform for running containerized appli
 scale deployments. This broker is still a work in progress and not yet available.
 
 ## Outstanding Tasks for Release
+- [x] ~~Add player count reconciliation and shutdown scheduling~~
+- [x] ~~change banner logic slightly~~
+- [x] ~~/warm command~~
 - [ ] Fix checks to immediately reconcile if server is offline
 - [ ] Add mechanism for offline reconciliation
-- [x] ~~Add player count reconciliation and shutdown scheduling~~
 - [ ] Add server locks
-- [x] ~~change banner logic slightly~~
 - [ ] only restart previously running servers after reconciliation
 - [ ] create config if missing
 - [ ] /reconcile command
-- [ ] /warm command
 - [ ] reconcile timer (nightly)
 - [ ] write a better description
