@@ -8,11 +8,18 @@ import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import club.arson.ogsoVelocity.config.ConfigManager
-import club.arson.ogsoVelocity.server.broker.KubernetesServerBroker
 import club.arson.ogsoVelocity.server.ServerManager
-import club.arson.ogsoVelocity.server.broker.DockerServerBroker
 import org.slf4j.Logger
 import java.nio.file.Path
+
+/*
+ * Things to do:
+ * - Fix checks to immediately reconcile if server is offline
+ * - Add mechanism for offline reconciliation
+ * - Add player count reconciliation and shutdown scheduling
+ * - Add server locks
+ * - change banner logic slightly
+ */
 
 @Plugin(
     id = "ogso-velocity", name = "ogso-velocity", version = BuildConstants.VERSION
@@ -23,7 +30,7 @@ class OgsoVelocity @Inject constructor(val proxy: ProxyServer, val logger: Logge
         logger.info("Initializing ogso-velocity")
 
         ServiceRegistry.instance.configManager = ConfigManager(proxy, this, dataDirectory, logger)
-        ServiceRegistry.instance.serverManager = ServerManager(proxy, this, DockerServerBroker(), logger)
+        ServiceRegistry.instance.serverManager = ServerManager(proxy, this, logger)
         proxy.eventManager.register(this, PlayerLifecycleListener(logger))
     }
 

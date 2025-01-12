@@ -30,6 +30,12 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.charleskorn.kaml:kaml:0.67.0")
     implementation("io.kubernetes:client-java:22.0.0")
+    implementation("com.github.docker-java:docker-java-core:3.4.1")
+    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.1")
+
+    testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+    testImplementation(kotlin("test"))
+    testImplementation("io.mockk:mockk:1.13.14")
 }
 
 val targetJavaVersion = 17
@@ -57,5 +63,8 @@ tasks {
     jar {
         manifest {}
         from(sourceSets.main.get().output)
+    }
+    test {
+        useJUnitPlatform()
     }
 }

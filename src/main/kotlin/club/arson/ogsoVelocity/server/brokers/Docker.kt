@@ -1,7 +1,8 @@
-package club.arson.ogsoVelocity.serverBrokers
+package club.arson.ogsoVelocity.server.brokers
 
 import club.arson.ogsoVelocity.config.DockerServerConfig
 import club.arson.ogsoVelocity.config.ServerConfig
+import club.arson.ogsoVelocity.server.ServerBroker
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.Bind
@@ -15,22 +16,31 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import org.slf4j.Logger
 import java.time.Duration
 
-class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
-    val client: DockerClient
-    val dockerConfig: DockerServerConfig
+class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
     val name: String
-    val startupTimeout: Long
-    val stopTimeout: Long
+    var startupTimeout: Long
+    var stopTimeout: Long
+    lateinit var client: DockerClient
+    lateinit var dockerConfig: DockerServerConfig
+    lateinit var dockerHost: String
 
     init {
+        name = config.name
+        startupTimeout = config.startupTimeout
+        stopTimeout = config.stopTimeout
+        _configureDockerClient(config)
+    }
+
+    private fun _configureDockerClient(config: ServerConfig) {
         if (config.docker == null) {
             logger?.error("Configuration missing for docker broker ${config.name}")
             throw Exception("Unable to create docker broker")
         }
         dockerConfig = config.docker!!
+        dockerHost = dockerConfig.hostPath
         val clientConfig = DefaultDockerClientConfig
             .createDefaultConfigBuilder()
-            .withDockerHost(dockerConfig.hostPath)
+            .withDockerHost(dockerHost)
             .build()
 
         val httpClient = ApacheDockerHttpClient.Builder()
@@ -41,12 +51,11 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
             .build()
 
         client = DockerClientImpl.getInstance(clientConfig, httpClient)
-        name = config.name
         startupTimeout = config.startupTimeout
         stopTimeout = config.stopTimeout
     }
 
-    private fun _createServer(): Result<Unit> {
+    private fun _createContainer(): Result<Unit> {
         val binds = ArrayList<Bind>()
         for ((hostPath, mount) in dockerConfig.volumes) {
             binds.add(Bind(hostPath, Volume(mount)))
@@ -55,8 +64,7 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
             .newHostConfig()
             .withRestartPolicy(RestartPolicy.unlessStoppedRestart())
             .withPortBindings(
-                PortBinding.parse("${dockerConfig.port}:25565/tcp"),
-                PortBinding.parse("${dockerConfig.port}:25565/udp")
+                dockerConfig.portBindings.map { PortBinding.parse(it) }
             )
             .withBinds(binds)
         try {
@@ -70,10 +78,10 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
         } catch (e: Exception) {
             return Result.failure(e)
         }
-        return _startServer()
+        return _startContainer()
     }
 
-    private fun _startServer(): Result<Unit> {
+    private fun _startContainer(): Result<Unit> {
         try {
             client
                 .startContainerCmd(name)
@@ -81,23 +89,23 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
         } catch (e: Exception) {
             return Result.failure(e)
         }
-        return _awaitStart()
+        return _awaitContainerStart()
     }
 
-    private fun _stopServer(): Result<Unit> {
+    private fun _stopContainer(): Result<Unit> {
         try {
             client.stopContainerCmd(name).exec()
         } catch (e: Exception) {
             return Result.failure(e)
         }
-        return _awaitStop()
+        return _awaitContainerStop()
     }
 
-    private fun _awaitStart(): Result<Unit> {
+    private fun _awaitContainerStart(): Result<Unit> {
         var startTime = System.currentTimeMillis()
         var isRunning = false
         while (!isRunning && System.currentTimeMillis() - startTime * 1000 < startupTimeout) {
-            val status = _getServerStatus()
+            val status = _getContainerStatus()
             if (status == "running") {
                 isRunning = true
             } else if (status == "exited") {
@@ -108,11 +116,11 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
         return if (isRunning) Result.success(Unit) else Result.failure(Throwable("Server $name failed to start (timeout)"))
     }
 
-    private fun _awaitStop(): Result<Unit> {
+    private fun _awaitContainerStop(): Result<Unit> {
         val startTime = System.currentTimeMillis()
         var isStopped = false
         while (!isStopped && System.currentTimeMillis() - startTime * 1000 < stopTimeout) {
-            val status = _getServerStatus()
+            val status = _getContainerStatus()
             if (status == "exited" || status == "dead" || status == null) {
                 isStopped = true
             }
@@ -121,7 +129,7 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
         return if (isStopped) Result.success(Unit) else Result.failure(Throwable("Server $name failed to stop (timeout)"))
     }
 
-    private fun _getServerStatus(): String? {
+    private fun _getContainerStatus(): String? {
         return try {
             client.inspectContainerCmd(name).exec().state.status
         } catch (e: NotFoundException) {
@@ -130,22 +138,22 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
     }
 
     override fun startServer(): Result<Unit> {
-        return when (_getServerStatus()) {
+        return when (_getContainerStatus()) {
             "running" -> Result.success(Unit)
-            "restarting" -> _awaitStart()
-            "created", "paused", "exited" -> _startServer()
-            "removing" -> _awaitStop().let { if (it.isSuccess) _startServer() else it }
-            "dead" -> removeServer().let { if (it.isSuccess) _createServer() else it }
-            null, -> _createServer()
+            "restarting" -> _awaitContainerStart()
+            "created", "paused", "exited" -> _startContainer()
+            "removing" -> _awaitContainerStop().let { if (it.isSuccess) _startContainer() else it }
+            "dead" -> removeServer().let { if (it.isSuccess) _createContainer() else it }
+            null, -> _createContainer()
             else -> Result.failure(Throwable("Server $name is in unknown state, aborting!"))
         }
     }
 
     override fun stopServer(): Result<Unit> {
-        return when (_getServerStatus()) {
-            "running", "restarting" -> _stopServer()
+        return when (_getContainerStatus()) {
+            "running", "restarting" -> _stopContainer()
             "created", "paused", "exited" -> Result.success(Unit)
-            "removing" -> _awaitStop()
+            "removing" -> _awaitContainerStop()
             "dead" -> removeServer()
             null -> Result.success(Unit)
             else -> Result.failure(Throwable("Server $name is in unknown state, aborting!"))
@@ -153,15 +161,49 @@ class Docker(config: ServerConfig, logger: Logger? = null) : ServerBroker {
     }
 
     override fun removeServer(): Result<Unit> {
-        val stopped = _awaitStop()
-        if (stopped.isFailure) {
-            return stopped
+        return _stopContainer().onSuccess {
+            runCatching { client.removeContainerCmd(name).exec() }
+                .onSuccess { return Result.success(Unit) }
+                .onFailure { return Result.failure(it) }
+        }.onFailure { return Result.failure(it) }
+    }
+
+    override fun reconcile(config: ServerConfig): Result<Runnable?> {
+        if (config.type != "docker") {
+            return Result.failure(IllegalArgumentException("Invalid configuration type: ${config.type}"))
         }
-        try {
-            client.removeContainerCmd(name).exec()
-        } catch (e: Exception) {
-            return Result.failure(e)
-        }
-        return Result.success(Unit)
+
+        var response: Result<Runnable?> = Result.success(null)
+        runCatching { client.inspectContainerCmd(name).exec() }
+            .onSuccess {
+                val hostChanged = config.docker?.hostPath != dockerHost
+                val imageChanged = it.config.image != config.docker?.image
+
+                val desiredPortConfig = config.docker?.portBindings?.map {
+                    val binding = PortBinding.parse(it)
+                    Pair(binding.binding.hostPortSpec, binding.exposedPort.port.toString())
+                }
+                val livePortConfig = it.hostConfig.portBindings.bindings.map {
+                    val p = Pair(it.key.port.toString(), it.value.map { binding -> binding.hostPortSpec })
+                    p.second.map { value -> value to p.first }
+                }.flatten()
+
+                val portsChanged = !livePortConfig.containsAll(desiredPortConfig ?: emptyList())
+                val volumesChanged = !it.hostConfig.binds.map { Pair(it.path, it.volume.path) }
+                    .containsAll(config.docker?.volumes?.map { Pair(it.key, it.value) } ?: emptyList())
+                if (imageChanged || portsChanged || volumesChanged || hostChanged) {
+                    response = Result.success(Runnable {
+                        removeServer()
+                        _configureDockerClient(config)
+                        stopTimeout = config.stopTimeout
+                        startupTimeout = config.startupTimeout
+                        _createContainer()
+                    })
+                }
+            }
+            .onFailure {
+                response = Result.failure(it)
+            }
+        return response
     }
 }

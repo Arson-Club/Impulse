@@ -1,105 +1,108 @@
-package club.arson.ogsoVelocity
+package club.arson.ogsoVelocity.server
 
+import club.arson.ogsoVelocity.OgsoVelocity
+import club.arson.ogsoVelocity.ServiceRegistry
 import club.arson.ogsoVelocity.config.ConfigReloadEvent
 import club.arson.ogsoVelocity.config.ServerConfig
-import club.arson.ogsoVelocity.serverBrokers.ServerBroker
+import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.proxy.ProxyServer
-import com.velocitypowered.api.proxy.server.RegisteredServer
+import com.velocitypowered.api.scheduler.ScheduledTask
 import org.slf4j.Logger
+import java.util.concurrent.TimeUnit
 
-class ServerManager(proxy: ProxyServer, plugin: OgsoVelocity, val logger: Logger? = null) {
-    var servers = mutableMapOf<String, ServerBroker>()
+class ServerManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val logger: Logger? = null) {
+    var servers = mutableMapOf<String, Server>()
+    var maintenanceInterval: Long
+    var maintenanceTask: ScheduledTask
 
     init {
         proxy.eventManager.register(plugin, this)
-        val config = ServiceRegistry.instance.configManager?.servers ?: emptyList()
-        _reconcileServers(emptyList(), config)
+        val config = ServiceRegistry.instance.configManager
+        _reconcileServers(emptyList(), config?.servers ?: emptyList())
+        maintenanceInterval = config?.maintenanceInterval ?: 300
+        maintenanceTask = proxy.scheduler
+            .buildTask(plugin, this::_serverMaintenance)
+            .repeat(maintenanceInterval, TimeUnit.SECONDS)
+            .schedule()
     }
 
-    fun getServer(name: String): ServerBroker? {
+    private fun _serverMaintenance() {
+        servers.values.forEach { server ->
+            if (server.serverRef.playersConnected.isEmpty()) {
+                logger?.warn("Found empty server ${server.serverRef.serverInfo.name}")
+                server.scheduleStop()
+            }
+        }
+    }
+
+    fun getServer(name: String): Server? {
         return servers[name]
     }
 
-    fun awaitReady(server: RegisteredServer): Result<Unit> {
-        val startTime = System.currentTimeMillis()
-        var isReady = false
-        val timeout = ServiceRegistry
-            .instance
-            .configManager
-            ?.servers
-            ?.find { it.name == server.serverInfo.name }
-            ?.startupTimeout ?: 120000
-
-        // TODO make timeout configurable
-        while (!isReady && System.currentTimeMillis() - startTime < timeout) {
-            try {
-                server.ping().get()
-                isReady = true
-            } catch(e: Exception) {
-                Thread.sleep(200)
-            }
-        }
-
-        return if (isReady) Result.success(Unit) else Result.failure(Throwable("Server ${server.serverInfo.name} failed to start (timeout)"))
-    }
-
     private fun _reconcileServers(oldConfigs: List<ServerConfig>, newConfigs: List<ServerConfig>) {
-        val oldServers = oldConfigs.map { it.name }
-        val newServers = newConfigs.map { it.name }
+        val oldServerNames = servers.keys
+        val newServerNames = newConfigs.map { it.name }
+        val allServerInstances = proxy.allServers
 
-        val toRemove = oldServers - newServers
+        val toRemove = oldServerNames - newServerNames
         toRemove.forEach {
             val server = servers[it]
-            server?.stopServer()?.onSuccess {
-                server.removeServer().onFailure {
-                    logger?.error("Failed to remove server $it")
-                }
-            }?.onFailure {
-                logger?.error("Failed to stop server $it")
+            server?.removeServer()?.onFailure {
+                logger?.error("Server $it failed to remove, it may be in an invalid state")
             }
+            servers.remove(it)
         }
-        toRemove.forEach { servers.remove(it) }
 
-        val toAdd = newServers - oldServers
-        toAdd.forEach { serverName ->
-            val serverConfig = newConfigs.find { it.name == serverName }
-            if (serverConfig == null) {
-                logger?.error("Server $serverName not found in new configuration")
+        val toAdd = newServerNames - oldServerNames
+        toAdd.forEach{ serverName ->
+            val serverInstance = allServerInstances.find { it.serverInfo.name == serverName }
+            val config = newConfigs.find { it.name == serverName }
+            if (serverInstance == null || config == null) {
+                logger?.warn("Server $serverName unable to be configured, missing instance or configuration")
             } else {
-                val server = ServerBroker.createFromConfig(serverConfig, logger)
-                server.onSuccess {
-                    servers[serverName] = it;
-                }.onFailure { logger?.error("Failed to create server $serverName: $it") }
+                ServerBroker.createFromConfig(config, logger).onSuccess {
+                    servers[serverName] = Server(it, serverInstance, config, proxy, plugin, logger)
+                    logger?.debug("ServerManager: server $serverName created")
+                }.onFailure {
+                    logger?.error("ServerManager: server $serverName failed to create: ${it.message}")
+                }
             }
         }
 
-        val toUpdate = newServers intersect oldServers
-        toUpdate.forEach { serverName ->
-            val oldConfig = oldConfigs.find { it.name == serverName }
+        val toReconcile = newServerNames intersect oldServerNames
+        toReconcile.forEach{ serverName ->
             val newConfig = newConfigs.find { it.name == serverName }
-            if (oldConfig != newConfig && newConfig != null) {
-                logger?.info("Updating server $serverName")
-                val server = servers[serverName]
-                server?.stopServer()?.onSuccess {
-                    server.removeServer().onSuccess {
-                        val newServer = ServerBroker.createFromConfig(newConfig, logger)
-                        newServer.onSuccess {
-                            servers[serverName] = it
-                        }.onFailure { logger?.error("Failed to create server $serverName: $it") }
-                    }.onFailure { logger?.error("Failed to remove server $serverName: $it") }
-                }?.onFailure { logger?.error("Failed to stop server $serverName: $it")}
+            if (oldConfigs.find { it.name == serverName } == newConfig) {
+                logger?.trace("ServerManager: server $serverName configuration unchanged")
+                return@forEach
+            }
+            servers[serverName]?.reconcile(newConfig!!)?.onSuccess {
+                logger?.info("ServerManager: server $serverName reconciled")
+            }?.onFailure {
+                logger?.error("ServerManager: server $serverName failed to reconcile: ${it.message}")
             }
         }
     }
 
     @Subscribe
-    fun onConfigReloadEvent(event: ConfigReloadEvent) {
-        logger?.debug("Reloading server configuration")
-        if (!event.result.isAllowed) {
-            return
-        }
-        _reconcileServers(event.oldConfig.servers, event.config.servers)
+    fun onConfigReloadEvent(event: ConfigReloadEvent): EventTask {
+        return EventTask.async({
+            logger?.debug("ServerManager: starting server configuration reload")
+            if (!event.result.isAllowed) {
+                logger?.trace("ServerManager: configuration reload denied")
+                return@async
+            }
+            _reconcileServers(event.oldConfig.servers, event.config.servers)
+            if (event.config.serverMaintenanceInterval != maintenanceInterval) {
+                maintenanceInterval = event.config.serverMaintenanceInterval
+                maintenanceTask.cancel()
+                maintenanceTask = proxy.scheduler
+                    .buildTask(plugin, this::_serverMaintenance)
+                    .repeat(maintenanceInterval, TimeUnit.SECONDS)
+                    .schedule()
+            }
+            logger?.info("ServerManager: server configuration reload complete")
+        })
     }
-
 }

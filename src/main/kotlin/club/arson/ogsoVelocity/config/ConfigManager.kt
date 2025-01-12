@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
 
-class ConfigManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val configDirectory: Path, val logger: Logger) {
+class ConfigManager(val proxy: ProxyServer, plugin: OgsoVelocity, val configDirectory: Path, val logger: Logger) {
     private val _watchTask: ScheduledTask
     private val _watchService: WatchService = FileSystems.getDefault().newWatchService()
     private var _liveConfig: Configuration = Configuration()
@@ -32,13 +32,29 @@ class ConfigManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val config
         _fireAndReload()
     }
 
-    fun getServers(): List<ServerConfig> {
-        return _liveConfig.servers
-    }
+    var servers: List<ServerConfig>
+        get() = _liveConfig.servers
+        private set(value) {
+            _liveConfig.servers = value
+        }
 
-    fun getReconcileInterval(): Long {
-        return _liveConfig.reconcileInterval
-    }
+    var maintenanceInterval: Long
+        get() = _liveConfig.serverMaintenanceInterval
+        private set(value) {
+            _liveConfig.serverMaintenanceInterval = value
+        }
+
+    var instanceName: String
+        get() = _liveConfig.instanceName
+        private set(value) {
+            _liveConfig.instanceName = value
+        }
+
+    var messages: Messages
+        get() = _liveConfig.messages
+        private set(value) {
+            _liveConfig.messages = value
+        }
 
     private fun _watchTask() {
         logger.trace("ConfigManager: Running watch task")
@@ -67,10 +83,10 @@ class ConfigManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val config
             val config = Yaml.default.decodeFromStream<Configuration>(
                 configDirectory.resolve(CONFIG_FILE_NAME).inputStream()
             )
-            configEvent = ConfigReloadEvent(config, ResultedEvent.GenericResult.allowed())
+            configEvent = ConfigReloadEvent(config, _liveConfig, ResultedEvent.GenericResult.allowed())
         } catch (e: YamlException) {
             logger.error("Failed to parse config file: ${e.message}")
-            configEvent = ConfigReloadEvent(Configuration(), ResultedEvent.GenericResult.denied())
+            configEvent = ConfigReloadEvent(_liveConfig, _liveConfig, ResultedEvent.GenericResult.denied())
         }
         proxy.eventManager.fire(configEvent).thenAccept({ event ->
             if (event.result.isAllowed) {
@@ -82,7 +98,3 @@ class ConfigManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val config
         })
     }
 }
-
-//    companion object {
-//        val INSTANCE: ConfigManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ConfigManager() }
-//    }

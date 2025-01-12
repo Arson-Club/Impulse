@@ -1,6 +1,7 @@
-package club.arson.ogsoVelocity.serverBrokers
+package club.arson.ogsoVelocity.server
 
 import club.arson.ogsoVelocity.config.ServerConfig
+import club.arson.ogsoVelocity.server.brokers.Docker
 import org.slf4j.Logger
 
 interface ServerBroker {
@@ -17,4 +18,6 @@ interface ServerBroker {
     fun stopServer(): Result<Unit>
 
     fun removeServer(): Result<Unit>
+
+    fun reconcile(config: ServerConfig): Result<Runnable?>
 }
