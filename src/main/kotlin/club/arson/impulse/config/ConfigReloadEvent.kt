@@ -1,4 +1,4 @@
-package club.arson.ogsoVelocity.config
+package club.arson.impulse.config
 
 import com.velocitypowered.api.event.ResultedEvent
 import com.velocitypowered.api.event.ResultedEvent.GenericResult

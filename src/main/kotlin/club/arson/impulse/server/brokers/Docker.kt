@@ -1,8 +1,8 @@
-package club.arson.ogsoVelocity.server.brokers
+package club.arson.impulse.server.brokers
 
-import club.arson.ogsoVelocity.config.DockerServerConfig
-import club.arson.ogsoVelocity.config.ServerConfig
-import club.arson.ogsoVelocity.server.ServerBroker
+import club.arson.impulse.config.DockerServerConfig
+import club.arson.impulse.config.ServerConfig
+import club.arson.impulse.server.ServerBroker
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.Bind

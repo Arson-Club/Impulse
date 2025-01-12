@@ -1,9 +1,7 @@
-package club.arson.ogsoVelocity
+package club.arson.impulse
 
-import club.arson.ogsoVelocity.config.ConfigManager
-import club.arson.ogsoVelocity.server.ServerManager
-
-//import club.arson.ogsoVelocity.server.ServerManager
+import club.arson.impulse.config.ConfigManager
+import club.arson.impulse.server.ServerManager
 
 class ServiceRegistry {
     companion object {

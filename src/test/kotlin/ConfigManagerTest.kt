@@ -1,6 +1,5 @@
-import club.arson.ogsoVelocity.OgsoVelocity
-import club.arson.ogsoVelocity.config.ConfigManager
-import org.junit.jupiter.api.Test
+import club.arson.impulse.Impulse
+import club.arson.impulse.config.ConfigManager
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.Scheduler
 import io.mockk.MockKAnnotations
@@ -17,7 +16,7 @@ class ConfigManagerTest {
     private lateinit var proxy: ProxyServer
 
     @MockK
-    private lateinit var plugin: OgsoVelocity
+    private lateinit var plugin: Impulse
 
     @RelaxedMockK
     private lateinit var logger: Logger

@@ -1,8 +1,8 @@
-package club.arson.ogsoVelocity.server
+package club.arson.impulse.server
 
-import club.arson.ogsoVelocity.OgsoVelocity
-import club.arson.ogsoVelocity.ServiceRegistry
-import club.arson.ogsoVelocity.config.ServerConfig
+import club.arson.impulse.Impulse
+import club.arson.impulse.ServiceRegistry
+import club.arson.impulse.config.ServerConfig
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.ServerPostConnectEvent
 import com.velocitypowered.api.proxy.ProxyServer
@@ -15,7 +15,7 @@ import org.slf4j.Logger
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var config: ServerConfig, val proxyServer: ProxyServer, val plugin: OgsoVelocity, val logger: Logger? = null) {
+class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var config: ServerConfig, val proxyServer: ProxyServer, val plugin: Impulse, val logger: Logger? = null) {
     var shutdownTask: ScheduledTask? = null
     var reconciliationEvent: ScheduledTask? = null
 

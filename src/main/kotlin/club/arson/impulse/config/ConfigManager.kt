@@ -1,6 +1,6 @@
-package club.arson.ogsoVelocity.config
+package club.arson.impulse.config
 
-import club.arson.ogsoVelocity.OgsoVelocity
+import club.arson.impulse.Impulse
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlException
 import com.charleskorn.kaml.decodeFromStream
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.inputStream
 import kotlin.io.path.name
 
-class ConfigManager(val proxy: ProxyServer, plugin: OgsoVelocity, val configDirectory: Path, val logger: Logger) {
+class ConfigManager(val proxy: ProxyServer, plugin: Impulse, val configDirectory: Path, val logger: Logger) {
     private val _watchTask: ScheduledTask
     private val _watchService: WatchService = FileSystems.getDefault().newWatchService()
     private var _liveConfig: Configuration = Configuration()

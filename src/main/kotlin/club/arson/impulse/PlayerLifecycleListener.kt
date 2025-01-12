@@ -1,4 +1,4 @@
-package club.arson.ogsoVelocity
+package club.arson.impulse
 
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.PostOrder

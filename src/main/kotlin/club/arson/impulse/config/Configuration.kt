@@ -1,4 +1,4 @@
-package club.arson.ogsoVelocity.config
+package club.arson.impulse.config
 
 import kotlinx.serialization.Serializable
 
@@ -33,7 +33,7 @@ data class Messages(
 @Serializable
 data class DockerServerConfig(
     var image: String = "marctv/minecraft-papermc-server:1.21.4",
-    var portBindings: List<String> = emptyList(),
+    var portBindings: List<String> = listOf("25565:25565"),
     var hostPath: String = "unix:///var/run/docker.sock",
     var volumes: Map<String, String> = emptyMap()
 )

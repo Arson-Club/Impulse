@@ -1,9 +1,9 @@
-package club.arson.ogsoVelocity.server
+package club.arson.impulse.server
 
-import club.arson.ogsoVelocity.OgsoVelocity
-import club.arson.ogsoVelocity.ServiceRegistry
-import club.arson.ogsoVelocity.config.ConfigReloadEvent
-import club.arson.ogsoVelocity.config.ServerConfig
+import club.arson.impulse.Impulse
+import club.arson.impulse.ServiceRegistry
+import club.arson.impulse.config.ConfigReloadEvent
+import club.arson.impulse.config.ServerConfig
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.proxy.ProxyServer
@@ -11,7 +11,7 @@ import com.velocitypowered.api.scheduler.ScheduledTask
 import org.slf4j.Logger
 import java.util.concurrent.TimeUnit
 
-class ServerManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val logger: Logger? = null) {
+class ServerManager(val proxy: ProxyServer, val plugin: Impulse, val logger: Logger? = null) {
     var servers = mutableMapOf<String, Server>()
     var maintenanceInterval: Long
     var maintenanceTask: ScheduledTask
@@ -30,7 +30,7 @@ class ServerManager(val proxy: ProxyServer, val plugin: OgsoVelocity, val logger
     private fun _serverMaintenance() {
         servers.values.forEach { server ->
             if (server.serverRef.playersConnected.isEmpty()) {
-                logger?.warn("Found empty server ${server.serverRef.serverInfo.name}")
+                logger?.trace("Found empty server ${server.serverRef.serverInfo.name}")
                 server.scheduleStop()
             }
         }

@@ -1,7 +1,7 @@
-package club.arson.ogsoVelocity.server
+package club.arson.impulse.server
 
-import club.arson.ogsoVelocity.config.ServerConfig
-import club.arson.ogsoVelocity.server.brokers.Docker
+import club.arson.impulse.config.ServerConfig
+import club.arson.impulse.server.brokers.Docker
 import org.slf4j.Logger
 
 interface ServerBroker {

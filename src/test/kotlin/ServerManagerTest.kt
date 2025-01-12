@@ -1,8 +1,8 @@
-import club.arson.ogsoVelocity.OgsoVelocity
-import club.arson.ogsoVelocity.ServiceRegistry
-import club.arson.ogsoVelocity.config.ConfigManager
-import club.arson.ogsoVelocity.server.ServerManager
-import club.arson.ogsoVelocity.server.broker.ServerBroker
+import club.arson.impulse.Impulse
+import club.arson.impulse.ServiceRegistry
+import club.arson.impulse.config.ConfigManager
+import club.arson.impulse.server.ServerManager
+import club.arson.impulse.server.broker.ServerBroker
 import com.velocitypowered.api.proxy.ProxyServer
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -20,7 +20,7 @@ class ServerManagerTest {
     private lateinit var proxyServer: ProxyServer
 
     @MockK
-    private lateinit var plugin: OgsoVelocity
+    private lateinit var plugin: Impulse
 
     @MockK
     private lateinit var broker: ServerBroker

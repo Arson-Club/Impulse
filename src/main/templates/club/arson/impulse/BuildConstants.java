@@ -1,4 +1,4 @@
-package club.arson.ogsoVelocity;
+package club.arson.impulse;
 
 // The constants are replaced before compilation
 public class BuildConstants {
