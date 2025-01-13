@@ -31,7 +31,7 @@ class ServerManager(val proxy: ProxyServer, val plugin: Impulse, val logger: Log
         servers.values.forEach { server ->
             if (server.serverRef.playersConnected.isEmpty()) {
                 logger?.trace("Found empty server ${server.serverRef.serverInfo.name}")
-                server.scheduleStop()
+                server.scheduleShutdown()
             }
         }
     }

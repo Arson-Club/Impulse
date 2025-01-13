@@ -19,7 +19,7 @@ import java.nio.file.Path
     version = BuildConstants.VERSION,
     authors = ["Dabb1e"],
     url = "https://github.com/ArsonClub/impulse",
-    description = "A plugin for managing servers in a Velocity network"
+    description = "Dynamically start, stop, and create servers with Velocity"
 )
 class Impulse @Inject constructor(val proxy: ProxyServer, val logger: Logger, @DataDirectory val dataDirectory: Path) {
     @Subscribe

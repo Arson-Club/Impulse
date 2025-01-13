@@ -19,6 +19,7 @@ data class ServerConfig(
     var stopTimeout: Long = 120,
     var forceServerReconciliation: Boolean = true,
     var serverReconciliationGracePeriod: Long = 60,
+    val shutdownBehavior: ShutdownBehavior = ShutdownBehavior.STOP,
     var docker: DockerServerConfig? = null,
     var kubernetes: KubernetesServerConfig? = null,
 )
@@ -32,10 +33,11 @@ data class Messages(
 
 @Serializable
 data class DockerServerConfig(
-    var image: String = "marctv/minecraft-papermc-server:1.21.4",
+    var image: String = "itzg/minecraft-server",
     var portBindings: List<String> = listOf("25565:25565"),
     var hostPath: String = "unix:///var/run/docker.sock",
-    var volumes: Map<String, String> = emptyMap()
+    var volumes: Map<String, String> = emptyMap(),
+    var env: Map<String, String> = mapOf("ONLINE_MODE" to "false"),
 )
 
 @Serializable
@@ -44,3 +46,9 @@ data class KubernetesServerConfig(
     var apiVersion: String = "ogso.arson.club/v1alpha1",
     var namespace: String = "default",
 )
+
+@Serializable
+enum class ShutdownBehavior {
+    STOP,
+    REMOVE
+}

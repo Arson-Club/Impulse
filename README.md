@@ -153,12 +153,13 @@ This is where you will define the servers that Impulse will manage. Each server 
 ### Docker Configuration
 Docker broker specific configuration values
 
-| Key            | Type     | Description                                                                                                                   | Default                                |
-|----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
-| `image`        | `string` | Docker image to use for the server                                                                                            | marcty/minecraft-papermc-server:1.21.4 |
-| `portBindings` | `list`   | List of port bindings to use for the server. Each entry should be a string in the format `hostPort:containerPort`             | ["25565:25565"]                        |
-| `hostPath`     | `string` | URI to the docker daemon location. This can either be a local socket, or a remote host.                                       | unix:///var/run/docker.sock            |
-| `volumes`      | `Map`    | Map of host directories to mount into the container. The key is the host directory, and the value is the container directory. | {}                                     |
+| Key            | Type     | Description                                                                                                                   | Default                     |
+|----------------|----------|-------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| `image`        | `string` | Docker image to use for the server                                                                                            | itzg/minecraft-server       |
+| `portBindings` | `list`   | List of port bindings to use for the server. Each entry should be a string in the format `hostPort:containerPort`             | ["25565:25565"]             |
+| `hostPath`     | `string` | URI to the docker daemon location. This can either be a local socket, or a remote host.                                       | unix:///var/run/docker.sock |
+| `volumes`      | `Map`    | Map of host directories to mount into the container. The key is the host directory, and the value is the container directory. | {}                          |
+| `env`          | `Map`    | Map of environment variables to pass to the container. The key is the variable name, and the value is the variable value.     | {"ONLINE_MODE": "false"}    |
 
 ## Reconciliation
 When server configuration is changed, Impulse will attempt to reconcile the running server to match the new configuration.
@@ -193,6 +194,8 @@ scale deployments. This broker is still a work in progress and not yet available
 - [ ] JAR Broker for very simple deployments
 - [ ] Metrics and monitoring endpoints
 - [ ] Refactor Brokers into Addon modules
+- [ ] Add MDBook documentation and guides
+- [ ] More configurable client messaging
 
 ## Outstanding Tasks for Release
 - [x] ~~Add player count reconciliation and shutdown scheduling~~
@@ -203,10 +206,14 @@ scale deployments. This broker is still a work in progress and not yet available
 - [x] ~~put commands under /impulse~~
 - [x] ~~only restart previously running servers after reconciliation~~
 - [x] ~~/status command~~
-- [ ] add "help" command
-- [ ] /reconcile command
+- [x] ~~pull image on demand~~
+- [x] ~~env var forwarding for docker broker~~
+- [x] ~~switch default server image~~
+- [x] ~~add shutdown behavior~~
+- [x] ~~env var reconciliation~~
+- [x] ~~relocate dependencies~~
+- [x] ~~/reconcile command~~
+- [x] ~~write a better description~~
+- [ ] docker broker inject velocity secret
 - [ ] Fix checks to immediately reconcile if server is offline
 - [ ] Add mechanism for offline reconciliation
-- [ ] add message to /server command transfers
-- [ ] add unit tests
-- [ ] write a better description

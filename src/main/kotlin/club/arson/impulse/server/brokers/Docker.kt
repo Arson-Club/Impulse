@@ -5,6 +5,7 @@ import club.arson.impulse.config.ServerConfig
 import club.arson.impulse.server.ServerBroker
 import club.arson.impulse.server.ServerStatus
 import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.api.command.PullImageResultCallback
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.Bind
 import com.github.dockerjava.api.model.HostConfig
@@ -56,6 +57,20 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
     }
 
     private fun _createContainer(): Result<Unit> {
+        // Pull the image if it is missing
+        kotlin.runCatching { client.inspectImageCmd(dockerConfig.image).exec() }.onSuccess {
+            logger?.info("Docker Broker: image ${dockerConfig.image} exists")
+        }.onFailure {
+            logger?.info("Docker Broker: image ${dockerConfig.image} does not exist, pulling...")
+            kotlin.runCatching { client.pullImageCmd(dockerConfig.image).exec(PullImageResultCallback()).awaitCompletion() }.onSuccess {
+                logger?.info("Docker Broker: image ${dockerConfig.image} pulled successfully")
+            }.onFailure {
+                logger?.info("Docker Broker: image ${dockerConfig.image} failed to pull ${it.message}")
+                return Result.failure(it)
+            }
+        }
+
+        // Create the container
         val binds = ArrayList<Bind>()
         for ((hostPath, mount) in dockerConfig.volumes) {
             binds.add(Bind(hostPath, Volume(mount)))
@@ -74,6 +89,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
                 .withHostConfig(hostConfig)
                 .withTty(true)
                 .withStdinOpen(true)
+                .withEnv(dockerConfig.env.map { "${it.key}=${it.value}" })
                 .exec()
         } catch (e: Exception) {
             return Result.failure(e)
@@ -192,6 +208,10 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
                 val hostChanged = config.docker?.hostPath != dockerHost
                 val imageChanged = it.config.image != config.docker?.image
 
+                val currentEnv = config.docker?.env?.map { "${it.key}=${it.value}" }?.toSet() ?: emptySet()
+                val liveEnv = it.config.env?.toSet() ?: emptySet()
+                val envChanged = currentEnv != liveEnv
+
                 val desiredPortConfig = config.docker?.portBindings?.map {
                     val binding = PortBinding.parse(it)
                     Pair(binding.binding.hostPortSpec, binding.exposedPort.port.toString())
@@ -204,7 +224,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
                 val portsChanged = !livePortConfig.containsAll(desiredPortConfig ?: emptyList())
                 val volumesChanged = !it.hostConfig.binds.map { Pair(it.path, it.volume.path) }
                     .containsAll(config.docker?.volumes?.map { Pair(it.key, it.value) } ?: emptyList())
-                if (imageChanged || portsChanged || volumesChanged || hostChanged) {
+                if (imageChanged || portsChanged || volumesChanged || hostChanged || envChanged) {
                     response = Result.success(Runnable {
                         removeServer()
                         _configureDockerClient(config)

@@ -3,6 +3,7 @@ package club.arson.impulse.server
 import club.arson.impulse.Impulse
 import club.arson.impulse.ServiceRegistry
 import club.arson.impulse.config.ServerConfig
+import club.arson.impulse.config.ShutdownBehavior
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.ServerPostConnectEvent
 import com.velocitypowered.api.proxy.ProxyServer
@@ -51,7 +52,7 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
 
     fun isRunning() = broker.isRunning()
 
-    fun scheduleStop(delay: Long = config.inactiveTimeout): Result<Server> {
+    fun scheduleShutdown(delay: Long = config.inactiveTimeout): Result<Server> {
         if (delay > 0 && shutdownTask == null && isRunning()) {
             logger?.debug("Server ${serverRef.serverInfo.name} has no players, scheduling shutdown")
             shutdownTask = proxyServer
@@ -59,7 +60,10 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
                 .buildTask(plugin, Runnable {
                     if (serverRef.playersConnected.isEmpty()) {
                         logger?.info("Server ${serverRef.serverInfo.name} has no players, stopping")
-                        stopServer()
+                        when (config.shutdownBehavior) {
+                            ShutdownBehavior.STOP -> stopServer()
+                            ShutdownBehavior.REMOVE -> removeServer()
+                        }
                     }
                     shutdownTask = null
                 }).delay(config.inactiveTimeout, TimeUnit.SECONDS)
@@ -123,7 +127,7 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
     fun handleDisconnect(user: String) {
         val playerCount = serverRef.playersConnected.filter { it.username != user }.size
         if (playerCount <= 0 && config.inactiveTimeout > 0) {
-            scheduleStop()
+            scheduleShutdown()
         }
     }
 

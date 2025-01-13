@@ -7,6 +7,7 @@ fun createImpulseCommand(): BrigadierCommand {
         .then(createWarmServerCommand())
         .then(createStopServerCommand())
         .then(createRemoveServerCommand())
+        .then(createReconcileCommand())
         .then(createServerStatusCommand())
     return BrigadierCommand(commandNode)
 }
