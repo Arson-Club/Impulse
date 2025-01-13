@@ -188,6 +188,12 @@ These should be removed on the next restart.
 Kubernetes is an advanced orchestration platform for running containerized applications. This is for advanced and large
 scale deployments. This broker is still a work in progress and not yet available.
 
+## Planned Features
+- [ ] Kubernetes Broker for advanced deployments
+- [ ] JAR Broker for very simple deployments
+- [ ] Metrics and monitoring endpoints
+- [ ] Refactor Brokers into Addon modules
+
 ## Outstanding Tasks for Release
 - [x] ~~Add player count reconciliation and shutdown scheduling~~
 - [x] ~~change banner logic slightly~~
@@ -196,10 +202,11 @@ scale deployments. This broker is still a work in progress and not yet available
 - [x] ~~add additional commands~~
 - [x] ~~put commands under /impulse~~
 - [x] ~~only restart previously running servers after reconciliation~~
-- [ ] /status command
+- [x] ~~/status command~~
+- [ ] add "help" command
 - [ ] /reconcile command
 - [ ] Fix checks to immediately reconcile if server is offline
 - [ ] Add mechanism for offline reconciliation
-- [ ] reconcile timer (nightly)
-- [ ] write a better description
 - [ ] add message to /server command transfers
+- [ ] add unit tests
+- [ ] write a better description

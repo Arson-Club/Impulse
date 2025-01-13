@@ -31,6 +31,8 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
         ))
     }
 
+    fun getStatus() = broker.getStatus()
+
     fun startServer(): Result<Server> {
         shutdownTask?.cancel()
         shutdownTask = null
@@ -77,9 +79,6 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
         var result: Result<Server> = Result.failure(Throwable("Reconciliation failed"))
         broker.reconcile(newConfig).onSuccess { reconcileHandler ->
             if (reconcileHandler != null) {
-                if (config.forceServerReconciliation) {
-
-                }
                 reconciliationEvent?.cancel()
                 reconciliationEvent = proxyServer.scheduler
                     .buildTask(plugin, Runnable {

@@ -3,6 +3,7 @@ package club.arson.impulse.server.brokers
 import club.arson.impulse.config.DockerServerConfig
 import club.arson.impulse.config.ServerConfig
 import club.arson.impulse.server.ServerBroker
+import club.arson.impulse.server.ServerStatus
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.Bind
@@ -17,15 +18,14 @@ import org.slf4j.Logger
 import java.time.Duration
 
 class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
-    val name: String
     var startupTimeout: Long
     var stopTimeout: Long
+    private val name: String = config.name
     lateinit var client: DockerClient
     lateinit var dockerConfig: DockerServerConfig
     lateinit var dockerHost: String
 
     init {
-        name = config.name
         startupTimeout = config.startupTimeout
         stopTimeout = config.stopTimeout
         _configureDockerClient(config)
@@ -102,7 +102,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
     }
 
     private fun _awaitContainerStart(): Result<Unit> {
-        var startTime = System.currentTimeMillis()
+        val startTime = System.currentTimeMillis()
         var isRunning = false
         while (!isRunning && System.currentTimeMillis() - startTime * 1000 < startupTimeout) {
             val status = _getContainerStatus()
@@ -137,8 +137,17 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
         }
     }
 
+    override fun getStatus(): ServerStatus {
+        return when (_getContainerStatus()) {
+            "running" -> ServerStatus.RUNNING
+            "restarting", "created", "paused", "exited", "dead", "removing" -> ServerStatus.STOPPED
+            null -> ServerStatus.REMOVED
+            else -> ServerStatus.UNKNOWN
+        }
+    }
+
     override fun isRunning(): Boolean {
-        return _getContainerStatus() == "running"
+        return getStatus() == ServerStatus.RUNNING
     }
 
     override fun startServer(): Result<Unit> {

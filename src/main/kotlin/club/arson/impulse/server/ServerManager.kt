@@ -19,7 +19,7 @@ class ServerManager(val proxy: ProxyServer, val plugin: Impulse, val logger: Log
     init {
         proxy.eventManager.register(plugin, this)
         val config = ServiceRegistry.instance.configManager
-        _reconcileServers(emptyList(), config?.servers ?: emptyList())
+        reconcileServers(emptyList(), config?.servers ?: emptyList())
         maintenanceInterval = config?.maintenanceInterval ?: 300
         maintenanceTask = proxy.scheduler
             .buildTask(plugin, this::_serverMaintenance)
@@ -40,12 +40,12 @@ class ServerManager(val proxy: ProxyServer, val plugin: Impulse, val logger: Log
         return servers[name]
     }
 
-    private fun _reconcileServers(oldConfigs: List<ServerConfig>, newConfigs: List<ServerConfig>) {
+    private fun reconcileServers(oldConfigs: List<ServerConfig>, newConfigs: List<ServerConfig>) {
         val oldServerNames = servers.keys
         val newServerNames = newConfigs.map { it.name }
         val allServerInstances = proxy.allServers
 
-        val toRemove = oldServerNames - newServerNames
+        val toRemove = oldServerNames - newServerNames.toSet()
         toRemove.forEach {
             val server = servers[it]
             server?.removeServer()?.onFailure {
@@ -93,7 +93,7 @@ class ServerManager(val proxy: ProxyServer, val plugin: Impulse, val logger: Log
                 logger?.trace("ServerManager: configuration reload denied")
                 return@async
             }
-            _reconcileServers(event.oldConfig.servers, event.config.servers)
+            reconcileServers(event.oldConfig.servers, event.config.servers)
             if (event.config.serverMaintenanceInterval != maintenanceInterval) {
                 maintenanceInterval = event.config.serverMaintenanceInterval
                 maintenanceTask.cancel()
