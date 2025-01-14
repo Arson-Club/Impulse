@@ -238,7 +238,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
                 }
             }
             .onFailure {
-                response = Result.failure(it)
+                response = Result.success(null)
             }
         return response
     }

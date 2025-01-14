@@ -18,16 +18,18 @@ import java.util.concurrent.TimeUnit
 
 class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var config: ServerConfig, val proxyServer: ProxyServer, val plugin: Impulse, val logger: Logger? = null) {
     var shutdownTask: ScheduledTask? = null
-    var reconciliationEvent: ScheduledTask? = null
+    var pendingReconciliationTask: ScheduledTask? = null
+    var pendingReconciliationHandler: Runnable? = null
 
     init {
         proxyServer.eventManager.register(plugin, this)
     }
 
-    private fun _showTitle(audience: Audience, title: String, subtitle: String, stay: Long) {
+    private fun _showReconciliationTitle(audience: Audience, stay: Long ) {
+        val messages = ServiceRegistry.instance.configManager?.messages
         audience.showTitle(Title.title(
-            MiniMessage.miniMessage().deserialize(title),
-            MiniMessage.miniMessage().deserialize(subtitle),
+            MiniMessage.miniMessage().deserialize(messages?.reconcileRestartTitle ?: "Server Restarting"),
+            MiniMessage.miniMessage().deserialize(messages?.reconcileRestartMessage ?: "Server is restarting to apply changes"),
             Title.Times.times(Duration.ofSeconds(0), Duration.ofSeconds(stay), Duration.ofSeconds(0))
         ))
     }
@@ -45,7 +47,12 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
 
     fun stopServer(): Result<Server> {
         return broker.stopServer().fold(
-            onSuccess = { Result.success(this) },
+            onSuccess = {
+                if (!config.forceServerReconciliation && pendingReconciliationHandler != null) {
+                    pendingReconciliationHandler?.run()
+                }
+                Result.success(this)
+                        },
             onFailure = { Result.failure(it) }
         )
     }
@@ -80,31 +87,35 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
     }
 
     fun reconcile(newConfig: ServerConfig): Result<Server> {
-        var result: Result<Server> = Result.failure(Throwable("Reconciliation failed"))
-        broker.reconcile(newConfig).onSuccess { reconcileHandler ->
-            if (reconcileHandler != null) {
-                reconciliationEvent?.cancel()
-                reconciliationEvent = proxyServer.scheduler
-                    .buildTask(plugin, Runnable {
-                        reconcileHandler.run()
-                        config = newConfig
-                        reconciliationEvent = null
-                    })
-                    .delay(Duration.ofSeconds(newConfig.serverReconciliationGracePeriod))
-                    .schedule()
-                val messages = ServiceRegistry.instance.configManager?.messages
-                _showTitle(
-                    serverRef,
-                    messages?.reconcileRestartTitle ?: "Server Restarting",
-                    messages?.reconcileRestartMessage ?: "Server is restarting to apply changes",
-                    config.serverReconciliationGracePeriod
-                )
-            } else {
-                config = newConfig
+        // Cancel any other reconciliation tasks
+        pendingReconciliationTask?.cancel()
+        pendingReconciliationTask = null
+
+        // See if we have any reconciliation work to do, if so set up our handler
+        broker.reconcile(newConfig).onSuccess { handler ->
+            pendingReconciliationHandler = handler?.let {
+                Runnable {
+                    it.run()
+                    config = newConfig
+                    pendingReconciliationHandler = null
+                }
             }
-            result = Result.success(this)
+        }.onFailure {
+            return Result.failure(it)
         }
-        return result
+
+        // If we have work to do, and we're forcing, schedule it
+        if (newConfig.forceServerReconciliation && pendingReconciliationHandler != null) {
+            pendingReconciliationTask = proxyServer.scheduler
+                .buildTask(plugin, Runnable {
+                    pendingReconciliationHandler?.run()
+                    pendingReconciliationTask = null
+                })
+                .delay(Duration.ofSeconds(newConfig.serverReconciliationGracePeriod))
+                .schedule()
+            _showReconciliationTitle(serverRef, newConfig.serverReconciliationGracePeriod)
+        }
+        return Result.success(this)
     }
 
     fun awaitReady(): Result<Unit> {
@@ -138,12 +149,9 @@ class Server(val broker: ServerBroker, val serverRef: RegisteredServer, var conf
             return
         }
 
-        if (reconciliationEvent != null) {
-            val messages = ServiceRegistry.instance.configManager?.messages
-            _showTitle(
+        if (pendingReconciliationTask != null) {
+            _showReconciliationTitle(
                 event.player,
-                messages?.reconcileRestartTitle ?: "Server Restarting",
-                messages?.reconcileRestartMessage ?: "Server is restarting to apply changes",
                 config.serverReconciliationGracePeriod
             )
         }

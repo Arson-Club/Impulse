@@ -215,6 +215,7 @@ scale deployments. This broker is still a work in progress and not yet available
 - [x] ~~/reconcile command~~
 - [x] ~~write a better description~~
 - [x] ~~reconcile on restart always causing downstream restart~~
-- [ ] Fix checks to immediately reconcile if server is offline
-- [ ] Add mechanism for offline reconciliation
+- [x] ~~Fix checks to immediately reconcile if server is offline~~
+- [x] ~~Add mechanism for offline reconciliation~~
+- [ ] Finalize default configuration
 - [ ] Final README updates
