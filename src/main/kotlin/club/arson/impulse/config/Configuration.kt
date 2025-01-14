@@ -17,7 +17,7 @@ data class ServerConfig(
     var inactiveTimeout: Long = 0,
     var startupTimeout: Long = 120,
     var stopTimeout: Long = 120,
-    var forceServerReconciliation: Boolean = true,
+    var forceServerReconciliation: Boolean = false,
     var serverReconciliationGracePeriod: Long = 60,
     val shutdownBehavior: ShutdownBehavior = ShutdownBehavior.STOP,
     var docker: DockerServerConfig? = null,
