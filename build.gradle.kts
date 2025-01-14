@@ -9,10 +9,9 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("eclipse")
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.8"
+    id("maven-publish")
 }
-
 group = "club.arson"
-version = "0.1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -29,7 +28,6 @@ dependencies {
     kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("com.charleskorn.kaml:kaml:0.67.0")
-    implementation("io.kubernetes:client-java:22.0.0")
     implementation("com.github.docker-java:docker-java-core:3.4.1")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.1")
 
@@ -60,16 +58,36 @@ project.idea.project.settings.taskTriggers.afterSync(generateTemplates)
 project.eclipse.synchronizationTasks(generateTemplates)
 
 tasks {
-    jar {
+    shadowJar {
         manifest {}
         from(sourceSets.main.get().output)
-    }
-    shadowJar {
-        //relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
-        //relocate("io.kubernetes.client", "club.arson.impulse.kubernetes.client")
-        //relocate("com.github.docker.java", "club.arson.impulse.docker.java")
+        relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
+        relocate("com.github.docker.java", "club.arson.impulse.docker.java")
+        archiveClassifier.set("")
     }
     test {
         useJUnitPlatform()
     }
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifact(tasks.shadowJar.get())
+            groupId = project.group.toString()
+            artifactId = project.name
+            version = project.version.toString()
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
