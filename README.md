@@ -61,10 +61,10 @@ servers:
 For the first time setup, you will need to restart the proxy. If your configuration is correct, you should see a few log
 messages.
 ```
-[18:52:15 INFO] [ogso-velocity]: Initializing ogso-velocity
-[18:52:15 INFO] [ogso-velocity]: Configuration reloaded
-[18:52:16 INFO] [ogso-velocity]: ServerManager: server lobby reconciled
-[18:52:16 INFO] [ogso-velocity]: ServerManager: server minigames reconciled
+[18:52:15 INFO] [Impulse]: Initializing ogso-velocity
+[18:52:15 INFO] [Impulse]: Configuration reloaded
+[18:52:16 INFO] [Impulse]: ServerManager: server lobby reconciled
+[18:52:16 INFO] [Impulse]: ServerManager: server minigames reconciled
 ```
 At this point impulse should be working as expected, the next few steps are a tour of the features of Impulse.
 
@@ -214,6 +214,7 @@ scale deployments. This broker is still a work in progress and not yet available
 - [x] ~~relocate dependencies~~
 - [x] ~~/reconcile command~~
 - [x] ~~write a better description~~
-- [ ] docker broker inject velocity secret
+- [x] ~~reconcile on restart always causing downstream restart~~
 - [ ] Fix checks to immediately reconcile if server is offline
 - [ ] Add mechanism for offline reconciliation
+- [ ] Final README updates

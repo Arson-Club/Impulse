@@ -59,7 +59,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
     private fun _createContainer(): Result<Unit> {
         // Pull the image if it is missing
         kotlin.runCatching { client.inspectImageCmd(dockerConfig.image).exec() }.onSuccess {
-            logger?.info("Docker Broker: image ${dockerConfig.image} exists")
+            logger?.debug("Docker Broker: image ${dockerConfig.image} exists")
         }.onFailure {
             logger?.info("Docker Broker: image ${dockerConfig.image} does not exist, pulling...")
             kotlin.runCatching { client.pullImageCmd(dockerConfig.image).exec(PullImageResultCallback()).awaitCompletion() }.onSuccess {
@@ -210,7 +210,7 @@ class Docker(config: ServerConfig, val logger: Logger? = null) : ServerBroker {
 
                 val currentEnv = config.docker?.env?.map { "${it.key}=${it.value}" }?.toSet() ?: emptySet()
                 val liveEnv = it.config.env?.toSet() ?: emptySet()
-                val envChanged = currentEnv != liveEnv
+                val envChanged = !liveEnv.containsAll(currentEnv)
 
                 val desiredPortConfig = config.docker?.portBindings?.map {
                     val binding = PortBinding.parse(it)

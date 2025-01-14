@@ -1,1 +1,1 @@
-rootProject.name = "ogso-velocity"
+rootProject.name = "impulse"

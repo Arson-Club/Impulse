@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "club.arson"
-version = "1.0-SNAPSHOT"
+version = "0.1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -65,9 +65,9 @@ tasks {
         from(sourceSets.main.get().output)
     }
     shadowJar {
-        relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
-        relocate("io.kubernetes.client", "club.arson.impulse.kubernetes.client")
-        relocate("com.github.docker.java", "club.arson.impulse.docker.java")
+        //relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
+        //relocate("io.kubernetes.client", "club.arson.impulse.kubernetes.client")
+        //relocate("com.github.docker.java", "club.arson.impulse.docker.java")
     }
     test {
         useJUnitPlatform()
