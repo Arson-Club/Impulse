@@ -236,3 +236,12 @@ feedback.
 
 ## License
 Impulse is Licensed under the AGPL-3.0 License. You can find the full license text in the `LICENSE` file.
+
+### External Libraries
+
+| Library                | License    | Link                                                             |
+|------------------------|------------|------------------------------------------------------------------|
+| Velocity-API           | GPL-3.0    | [Github](https://github.com/PaperMC/Velocity?tab=readme-ov-file) |
+| Docker Java Client     | Apache-2.0 | [Github](https://github.com/docker-java/docker-java)             |
+| Kaml                   | Apache-2.0 | [Github](https://github.com/charleskorn/kaml)                    |
+| Kubernetes Java Client | Apache-2.0 | [Github](https://github.com/kubernetes-client/java)              |
