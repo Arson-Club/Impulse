@@ -4,10 +4,12 @@ to dynamically start and stop servers on demand as players join and leave. Why r
 hours a day?
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+![Static Badge](https://img.shields.io/badge/Release-v0.1.0-blue?link=https%3A%2F%2Fgithub.com%2FArson-Club%2FImpulse%2Freleases)
+![Static Badge](https://img.shields.io/badge/Get%20It%20On%20Hangar-8A2BE2?link=https%3A%2F%2Fhangar.papermc.io%2FArson-Club%2FImpulse)
 
 ## Installation
 To get started with Impulse, you will need to download our latest release from either [Hanger](https://hangar.papermc.io/ArsonClub/Impulse)
-or our [Release Page](https://github.com/ArsonClub/Impulse/releases). Once downloaded place the jar file in your Velocity plugins folder.
+or our [Release Page](https://github.com/Arson-Club/Impulse/releases). Once downloaded place the jar file in your Velocity plugins folder.
 
 ## Getting Started
 After installing Impulse, you will need to configure it to work with your server setup. In this getting started guide, we
