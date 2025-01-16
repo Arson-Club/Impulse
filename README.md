@@ -3,89 +3,33 @@ Impulse is a plugin for the Minecraft server proxy [Velocity](https://papermc.io
 to dynamically start and stop servers on demand as players join and leave. Why run a server that is only used for a few
 hours a day?
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Static Badge](https://img.shields.io/badge/Release-v0.1.0-blue?link=https%3A%2F%2Fgithub.com%2FArson-Club%2FImpulse%2Freleases)](https://github.com/Arson-Club/Impulse/releases)
-[![Static Badge](https://img.shields.io/badge/Get%20It%20On%20Hangar-8A2BE2?link=https%3A%2F%2Fhangar.papermc.io%2FArson-Club%2FImpulse)](https://hangar.papermc.io/ArsonClub/Impulse)
-[![Modrinth](https://img.shields.io/badge/dynamic/json?labelColor=black&color=grey&label=&query=title&url=https://api.modrinth.com/v2/project/UDyKMCWP&style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAJPUExURQAAABvZahWnUha1WAYzGQlHIxvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZav///9ScwmYAAADDdFJOUwAAAAAAAA8zW3uOYwIBK3rB6Pn+ml18KiGL5HEDquOIH07R/UzKz2zu+uLHIibtafWkVCMNBRqg7/RQuT8EQbvT+5ETDBSU/NAgCSdZlcQKii7mtxJY5fF/7D1SRkB+EcWh4UilOOtPMdTCR1PqN969vmGDCw7G4DSSsAcGHrSPr3bds5CEwDKoXumcZdwcG4KmjayX32A79pjOqRjIFoXynVYVgPi6qxDnL78p2obVJFquNbGZCPdyvHPZ1yhuh8s+iRzcsrEAAAABYktHRMQUDBvhAAAAB3RJTUUH5wQXDwgZWDUtiQAAAqRJREFUOMttU/k7lFEU/k4L4hsxtNAnhRgiJZOiSfbI2oJpmRFCi2kV0aaNVLTIEpVISmnf97r/WO+534yZnqfzw73vOe+559xz7rmKIoVYvLx95vj6qUSqVBW3sGrwnxsQaAwSwcDz5i9g0wxPfmFIqJCyiEgLE4vDl7iD8PGlETotIqOQahlAdJTLA5sWY5JsbNzysHiihEBWViRqRDOlgyFmJVtMq5JWJ5vhvyZlLevrEmUILKl8PihtvYWcYt6QLmNwFjjEb4SSkZnlZLO5yJzcPBg35bODwZfPZxYwWbC5sKjYzwBUkssxSg1wKNsCtHUb89vTy3GwopBxDmcJ9YdDJYB1B9t2WmUtcbtkqt18Mxsp9irsezS2VEu+uka/mqUWSrFd2VsnhLEetoZ9TFv3HwCexdUdjBWi0aH4YTuEvtoPM3/EO1nnuTpEjD2qHIM54DhR0wmA5hZySzIntyknsbZyi8IB0tp07tRpBDKfgeWsdDjHDlFGRIjnl3O0t573gcMFUBeVS1gvlxB1dOZxv0pIu9IF01UDZRdjr1SuZQhxvbvnRrmsMePmrdsrGPRaKP8OLtmn9KM7A4N3xb8yNExUb5RlZt2btpZbXajzPoYkBaDKrtADp3HkYdloo56ndgx37UcHxSP0tIWBGH9cg1nx6TJFTNhS7eCfcA1PJ+GgDbLDs2GuX3V05Ohj0xYSBGumyq/yfApw4EWTRxPJqxQvIF6+ks9Gr0d4nN+8Nbhoi+NdJEwVSc6hVNvHOUvg+5qeDxoP3GQz6x8/qXLuZ6Op7SPy+gNTnydSELabk1Z8Mbs/hlr4dbobfUgxJMS3UdXza9H33jqnA3/OH41FCZ7/l7HW8vOXiWc9GvPf06D953/T2O/EP8HBNtcH0Zm/lqFNUgTAex4AAAAldEVYdGRhdGU6Y3JlYXRlADIwMjMtMDQtMjNUMTU6MDg6MjQrMDA6MDAE5dOaAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIzLTA0LTIzVDE1OjA4OjI0KzAwOjAwdbhrJgAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wNC0yM1QxNTowODoyNSswMDowMITaQU0AAAAASUVORK5CYII=
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=for-the-badge)](https://github.com/Arson-Club/Impulse/blob/main/LICENSE.txt)
+[![Release](https://img.shields.io/badge/dynamic/json?label=Release&query=tag_name&url=https://api.github.com/repos/Arson-Club/Impulse/releases/latest&style=for-the-badge)](https://github.com/Arson-Club/Impulse/releases)
+[![Hangar](https://img.shields.io/badge/dynamic/json?color=004ee9&label=Hangar&query=name&url=https://hangar.papermc.io/api/v1/projects/Impulse&style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAATrAAAE6wHYKlsNAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAA6hJREFUOI2FVG1MW2UYPe+9t71tmXRA5l2/pt1kbl3FmLFsaSXxAz+IQ81+4DSIjSYQN6MxzswgKmpC+LMQjVGbGTQuccagxi6LsX/kKw0VayVth64DypoFFYJj3vYWeu99/VHa9bqCz7/7nOec9zzve3MIpRSbVxsrpa++92moPjCUPr7/wUOej7fVrpDnXHS50jSzuRgh4szyqbPD2285f7HxVZvp7Xt1+lx4bWrrC8pjR4+gq0t3A2Mzh5emDr/52U+3NUjXFtmH5YRp92wdLyzVOPQK51QplfOy0mQ8PxSuKOj1endxHBckhLAFiBLCMDoCFaxKSgRKARW0OKGolE6NjIwcLuIcAODRth1P66uah1h1JyHXyQDA8zwsFgtSqVTBAQC2DM/n85r5giDDPnkHzzcPyZIGtFgs6Ovrg91uRzweRyAQwNjYGGRZ3vCamI/ipOF0e9CpJyxXDphMJvT398NutwMA3G43uru70dHRsaEYADCXZu9ks7vEg5Iup3md9vZ2WK1WzbDf78fg4KCmx7JEd3Wu+ZWS4C/JL19MxO5fmbMs/lNs6vV6tLS0aIjj4+PIZDIwGAyaPgUhn4fvaspdeehdAGBf79SZfr78uKt2+3fK7MXaPYQQuFwutLa2lkiKoiAWi8Hn80EQBEiShIWFhQKoKhllH5+ulhin1fjJbuapgxeafa7vVxPZ/aWVbTabxsX09DQ8Hg9GR0fhdrvR29sLjlt/TxVopGP6gcgzzMIVEmRMdnPnA+7UZQt7s3r9XliN4Pz8PKqrqyGKIgRBgMFgQE1NzfrKQMPMVtTWfSN1hj6oZ4CvlGpn08sHhN9+LQosLS1pBGVZRjQaRSgUQjQaBaUUuVyuhDtTgvnAobPWv6dXzqz/Km+pA6e93xqNxncAIJFIQJbl0lqEECSTSYTDYYTDYTgcDoiiWHJYl9lSn11e+/rZlxr5iuEgiiJ6enowMTEBSinMZjOy2WwJT6fTKM8AVcWWkwNt7x9zUZGrJAgAkUgEkUgEgiDA4/EgGAxWnKOAsqYox3Qm+hegDQc3z/MxhvmfRPtPybI8Pzw8fGvxu+SQUjqTz+cbu41Vj+zhjF49Q9g/TRkptfOP1eTton5y0Zd/YkecbLtpOfRGf+7HMsFs+QE35uGRo3sVlezzHz/Xdq2Kd09Ods3xcoPuNe8Xq/W23O9GR/DEZo43DFj/BeI6F/gwl+Hue/7U3SdH99py9xgdP5woJOLG9S+2F3zuid6QbAAAAABJRU5ErkJggg==)](https://hangar.papermc.io/ArsonClub/Impulse)
+[![Modrinth](https://img.shields.io/badge/dynamic/json?labelColor=black&color=1bd96a&label=Modrinth&query=title&url=https://api.modrinth.com/v2/project/UDyKMCWP&style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAJPUExURQAAABvZahWnUha1WAYzGQlHIxvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZahvZav///9ScwmYAAADDdFJOUwAAAAAAAA8zW3uOYwIBK3rB6Pn+ml18KiGL5HEDquOIH07R/UzKz2zu+uLHIibtafWkVCMNBRqg7/RQuT8EQbvT+5ETDBSU/NAgCSdZlcQKii7mtxJY5fF/7D1SRkB+EcWh4UilOOtPMdTCR1PqN969vmGDCw7G4DSSsAcGHrSPr3bds5CEwDKoXumcZdwcG4KmjayX32A79pjOqRjIFoXynVYVgPi6qxDnL78p2obVJFquNbGZCPdyvHPZ1yhuh8s+iRzcsrEAAAABYktHRMQUDBvhAAAAB3RJTUUH5wQXDwgZWDUtiQAAAqRJREFUOMttU/k7lFEU/k4L4hsxtNAnhRgiJZOiSfbI2oJpmRFCi2kV0aaNVLTIEpVISmnf97r/WO+534yZnqfzw73vOe+559xz7rmKIoVYvLx95vj6qUSqVBW3sGrwnxsQaAwSwcDz5i9g0wxPfmFIqJCyiEgLE4vDl7iD8PGlETotIqOQahlAdJTLA5sWY5JsbNzysHiihEBWViRqRDOlgyFmJVtMq5JWJ5vhvyZlLevrEmUILKl8PihtvYWcYt6QLmNwFjjEb4SSkZnlZLO5yJzcPBg35bODwZfPZxYwWbC5sKjYzwBUkssxSg1wKNsCtHUb89vTy3GwopBxDmcJ9YdDJYB1B9t2WmUtcbtkqt18Mxsp9irsezS2VEu+uka/mqUWSrFd2VsnhLEetoZ9TFv3HwCexdUdjBWi0aH4YTuEvtoPM3/EO1nnuTpEjD2qHIM54DhR0wmA5hZySzIntyknsbZyi8IB0tp07tRpBDKfgeWsdDjHDlFGRIjnl3O0t573gcMFUBeVS1gvlxB1dOZxv0pIu9IF01UDZRdjr1SuZQhxvbvnRrmsMePmrdsrGPRaKP8OLtmn9KM7A4N3xb8yNExUb5RlZt2btpZbXajzPoYkBaDKrtADp3HkYdloo56ndgx37UcHxSP0tIWBGH9cg1nx6TJFTNhS7eCfcA1PJ+GgDbLDs2GuX3V05Ohj0xYSBGumyq/yfApw4EWTRxPJqxQvIF6+ks9Gr0d4nN+8Nbhoi+NdJEwVSc6hVNvHOUvg+5qeDxoP3GQz6x8/qXLuZ6Op7SPy+gNTnydSELabk1Z8Mbs/hlr4dbobfUgxJMS3UdXza9H33jqnA3/OH41FCZ7/l7HW8vOXiWc9GvPf06D953/T2O/EP8HBNtcH0Zm/lqFNUgTAex4AAAAldEVYdGRhdGU6Y3JlYXRlADIwMjMtMDQtMjNUMTU6MDg6MjQrMDA6MDAE5dOaAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDIzLTA0LTIzVDE1OjA4OjI0KzAwOjAwdbhrJgAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyMy0wNC0yM1QxNTowODoyNSswMDowMITaQU0AAAAASUVORK5CYII=
 )](https://modrinth.com/plugin/impulse-server-manager)
 
 ## Installation
-To get started with Impulse, you will need to download our latest release from either [Hanger](https://hangar.papermc.io/ArsonClub/Impulse)
-or our [Release Page](https://github.com/Arson-Club/Impulse/releases). Once downloaded place the jar file in your Velocity plugins folder.
+In short, download our latest release from one of our sources and place it in your Velocity plugins folder. For more detailed instructions see our [Getting Started](https://arson.club/impulse/getting-started.html) guide.
 
-## Getting Started
+Sources:
+- [Modrinth](https://modrinth.com/plugin/impulse-server-manager)
+- [Hangar](https://hangar.papermc.io/ArsonClub/Impulse)
+- [GitHub Releases](https://github.com/Arson-Club/Impulse/releases)
+
+## Quick Start
+**For a more detailed guide, see our [Getting Started](https://arson.club/impulse/getting-started.html) guide.**
 After installing Impulse, you will need to configure it to work with your server setup. In this getting started guide, we
 will be setting up a simple SMP server suitable for a small community or group of friends. We will configure Velocity to
 start up our server when a player connects, and shut it down after 5 minutes of no players being online.
 
-### Prerequisites
-#### Docker
-We will be using the Docker broker for this example. This is currently the only broker available, but more are planned.
-You can find instructions on how to install Docker [here](https://docs.docker.com/get-docker/). In this example we will
-be running the server on the same machine as the proxy. For more advanced setups and options see the [Docker Broker](#Docker-Broker).
+### Step 1: Configure Velocity
 
-#### Velocity
-You will need a working Velocity server to use Impulse. You can find instructions on how to install Velocity [here](https://docs.papermc.io/velocity).
-We will touch on relevant configuration options in this guide, but it is **not a replacement** for the official documentation.
-Make sure you are familiar with setting up Velocity before continuing.
+### Step 2: Configure Impulse
 
-### Step 1: Configuring Velocity (`velocity.toml`)
-Create the servers as normal in the Velocity config. Make a note of the server names. Impulse will only manage a server if
-its config name **matches exactly**.
+### Step 3: Configure the MC Server
 
-For our example, we can use this basic server configuration:
-```toml
-[servers]
-# Our smp server Impulse will run on the same server as the proxy
-smp = "127.0.0.1:25566"
-```
-
-While we are here lets also set up modern forwarding (this is not required for Impulse):
-```toml
-player-info-forwarding = "modern"
-```
-You will also want to copy the string in the `forwarding.secret` file for later.
-
-### Step 2: Configure Impulse (`plugins/Impulse/config.yaml`)
-Impulse requires additional configuration. The configuration file is located at `plugins/impulse/config.yaml`.
-In general, you will use this file to tell Impulse how to manage your server.
-
-For this example we are using the path `/srv/smp` to hold the data of the server, but you can change this to whatever you
-like. The following config will start a server on port 25566 when a player connects to the `smp` server in Velocity. The server
-will then shut down after 5 minutes of inactivity.
-```yaml
-instanceName: MyCoolSMP
-servers:
-  - name: smp # Name matching the server name in velocity.toml
-    inactiveTimeout: 300 # Stop the server after 5 minutes of inactivity
-    type: docker # Server broker type
-    docker:
-      portBindings:
-        - "25566:25565" # Tell Impulse what ports to bind to this server
-      env:
-        ONLINE_MODE: "FALSE" # Set the server to offline mode needed for Velocity
-        TYPE: "FABRIC" # Set the server type to Fabric
-        EULA: "TRUE" # Accept the EULA
-        MODRINTH_PROJECTS: "fabricproxy-lite" # Automatically installs mod needed to use Velocity modern forwarding
-      volumes:
-        "/srv/smp": "/data" # Mount a directory from the host into /data for persistence, this will have your world data in it
-```
-
-### Step 3: Configure the Server (`/srv/smp/config/FabricProxy-Lite.toml`)
-This is only needed if you are setting up modern forwarding. To inject the velocity secret we can create a file in the
-data directory that Impulse will mount into the server. Add the following to the `FabricProxy-Lite.toml`:
-```toml
-hackOnlineMode = true
-hackEarlySend = false
-hackMessageChain = true
-disconnectMessage = "This server requires you to connect with Velocity."
-secret = "<YOUR SECRET FROM forwarding.secret HERE>"
-```
-
-### Step 4: Configure Docker
-No specific docker configuration is needed for this example. Impulse will use the default Docker image `itzg/minecraft-server`.
-Although we will attempt to pull the image automatically, you will get better performance if you pre-pull the image manually.
-Simply run `docker pull itzg/minecraft-server` on the host machine.
+### Step 4: Connect
 
 ### Step 5: Starting Velocity and Connecting
 Start your Velocity server as normal. If everything is configured correctly, you should see a few log messages from Impulse:
@@ -235,15 +179,3 @@ If you require help with Impulse, feel free to open an issue with the `support` 
 All contributions are welcome! If you have a feature you would like to see, or a bug you would like to fix, feel free to
 open a pull request. If you think it is going to be a large change, feel free to open an issue or a discussion first for
 feedback.
-
-## License
-Impulse is Licensed under the AGPL-3.0 License. You can find the full license text in the `LICENSE` file.
-
-### External Libraries
-
-| Library                | License    | Link                                                             |
-|------------------------|------------|------------------------------------------------------------------|
-| Velocity-API           | GPL-3.0    | [Github](https://github.com/PaperMC/Velocity?tab=readme-ov-file) |
-| Docker Java Client     | Apache-2.0 | [Github](https://github.com/docker-java/docker-java)             |
-| Kaml                   | Apache-2.0 | [Github](https://github.com/charleskorn/kaml)                    |
-| Kubernetes Java Client | Apache-2.0 | [Github](https://github.com/kubernetes-client/java)              |
