@@ -2,7 +2,7 @@
 authors = ["Dabb1e"]
 language = "en"
 multilingual = false
-src = "src"
+src = "docs"
 title = "Impulse"
 
 [output.html]

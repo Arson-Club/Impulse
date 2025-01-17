@@ -5,15 +5,16 @@ To configure our SMP server to be managed by Docker, we simply need to add a few
 instanceName: MyCoolSMP
 servers:
   - name: smp
-    image: "itzg/minecraft-server:latest"
     inactiveTimeout: 300
     type: docker
     docker:
+      image: "itzg/minecraft-server:latest"
       portBindings:
         - "25566:25565"
       env:
         ONLINE_MODE: "FALSE"
         TYPE: "FABRIC"
+        EULA: "TRUE"
         MODRINTH_PROJECTS: "fabricproxy-lite"
       volumes:
         "/srv/smp:/data"
