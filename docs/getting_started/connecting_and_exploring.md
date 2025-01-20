@@ -7,3 +7,7 @@ Velocity is set up to hot reload its configuration when it changes. This means y
 
 ## Connecting
 In your 
+
+```
+[05:19:04 INFO] [impulse]: Server smp has no players, stopping
+```

@@ -1,5 +1,5 @@
 # Summary
-[Introduction](../../README.md)
+[Introduction](README.md)
 
 # Getting Started
 - [What we Want to Achieve](./getting_started/index.md)
@@ -13,13 +13,18 @@
 - [Connecting and Exploring](./getting_started/connecting_and_exploring.md)
 
 # Reference
-- [Configuration]()
-- [Commands]()
-  - [warm]()
-  - [stop]()
-  - [remove]()
-  - [reconcile]()
-  - [status]()
+- [Configuration](reference/configuration.md)
+- [Commands](reference/commands.md)
+  - [start](reference/start-command.md)
+  - [stop](reference/stop-command.md)
+  - [remove](reference/remove-command.md)
+  - [reconcile](reference/reconcile-command.md)
+  - [status](reference/status-command.md)
+- [Brokers]()
+  - [Docker]()
+  - [JAR]()
+  - [Kubernetes]()
+- [Reconciliation]()
 - [Examples]()
   - [Persistent Lobby]()
   - [Minigames Server]()
