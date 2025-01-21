@@ -16,35 +16,18 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UnstableApiUsage")
+plugins {
+    kotlin("jvm")
 
-rootProject.name = "impulse"
+    `dokka-convention`
+    `java-library`
+}
+group = "club.arson"
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+dokka {
+    dokkaSourceSets.configureEach {}
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") {
-            name = "papermc-repo"
-        }
-        maven("https://oss.sonatype.org/content/groups/public/") {
-            name = "sonatype"
-        }
-    }
-}
-
-sequenceOf(
-    "api",
-    "app",
-    "docker-broker",
-).forEach {
-    val project = ":${rootProject.name}-$it"
-    include(project)
-    project(project).projectDir = file(it)
+java {
+    withSourcesJar()
 }
