@@ -120,3 +120,4 @@ runs/
 
 # Temp ignores untill the files are ready
 src/main/java
+start_test_proxy.sh

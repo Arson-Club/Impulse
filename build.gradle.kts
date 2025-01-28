@@ -1,82 +1,144 @@
-import org.jetbrains.gradle.ext.settings
-import org.jetbrains.gradle.ext.taskTriggers
-import org.jetbrains.kotlin.ir.backend.js.compile
+/*
+ *  Impulse Server Manager for Velocity
+ *  Copyright (c) 2025  Dabb1e
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as
+ *  published by the Free Software Foundation, either version 3 of the
+ *  License, or (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 plugins {
-    kotlin("jvm") version "2.0.20-Beta1"
-    kotlin("kapt") version "2.0.20-Beta1"
-    kotlin("plugin.serialization") version "2.0.20-Beta1"
+    kotlin("jvm")
+    kotlin("kapt")
+    kotlin("plugin.serialization") version "2.1.20-Beta1"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("eclipse")
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.8"
-    id("maven-publish")
-}
-group = "club.arson"
-
-repositories {
-    mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/") {
-        name = "papermc-repo"
-    }
-    maven("https://oss.sonatype.org/content/groups/public/") {
-        name = "sonatype"
-    }
+    `dokka-convention`
+    `maven-publish`
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.charleskorn.kaml:kaml:0.67.0")
-    implementation("com.github.docker-java:docker-java-core:3.4.1")
-    implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.1")
-
-    testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    testImplementation(kotlin("test"))
-    testImplementation("io.mockk:mockk:1.13.14")
-}
-
-val targetJavaVersion = 17
-kotlin {
-    jvmToolchain(targetJavaVersion)
-}
-
-val templateSource = file("src/main/templates")
-val templateDest = layout.buildDirectory.dir("generated/sources/templates")
-val generateTemplates = tasks.register<Copy>("generateTemplates") {
-    val props = mapOf("version" to project.version)
-    inputs.properties(props)
-
-    from(templateSource)
-    into(templateDest)
-    expand(props)
-}
-
-sourceSets.main.configure { java.srcDir(generateTemplates.map { it.outputs }) }
-
-project.idea.project.settings.taskTriggers.afterSync(generateTemplates)
-project.eclipse.synchronizationTasks(generateTemplates)
-
-tasks {
-    shadowJar {
-        manifest {}
-        from(sourceSets.main.get().output)
-        relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
-        relocate("com.github.docker.java", "club.arson.impulse.docker.java")
-        archiveClassifier.set("")
+    sequenceOf(
+        "api",
+        "app",
+        "docker-broker",
+    ).forEach {
+        dokka(project(":impulse-$it:"))
     }
-    test {
-        useJUnitPlatform()
+}
+
+subprojects {
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+    apply(plugin = "org.jetbrains.kotlin.kapt")
+    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
+    apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "maven-publish")
+
+    dependencies {
+        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+        kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+
+        implementation("com.charleskorn.kaml:kaml:0.67.0")
     }
+
+    val targetJavaVersion = 17
+    kotlin {
+        jvmToolchain(targetJavaVersion)
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("shadowJarPublication") {
+                artifact(tasks.named("shadowJar").get())
+
+                groupId = project.group.toString()
+                artifactId = project.name
+                version = project.version.toString()
+
+                pom {
+                    name = project.name
+                    url = "https://github.com/Arson-Club/Impulse"
+                    licenses {
+                        license {
+                            name = "GNU Affero General Public License"
+                            url = "https://www.gnu.org/licenses/"
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = "dabb1e"
+                            name = "Dabb1e"
+                            email = "dabb1e@arson.club"
+                        }
+                    }
+                }
+            }
+        }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
+    }
+}
+
+val combinedDistributionProjects = listOf(
+    "app",
+    "docker-broker",
+)
+
+tasks.register<Jar>("combinedDistributionShadowJar") {
+    group = "build"
+    description = "Builds the release jar combining the base app and core brokers"
+    archiveBaseName.set("impulse")
+    archiveClassifier.set("")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    dependsOn(combinedDistributionProjects.map { ":impulse-${it}:shadowJar" })
+    from(combinedDistributionProjects.map { p ->
+        project(":impulse-${p}").tasks.named("shadowJar").map { (it as Jar).archiveFile.get().asFile }
+    }.map { zipTree(it) })
 }
 
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            artifact(tasks.shadowJar.get())
+            artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
             groupId = project.group.toString()
             artifactId = project.name
             version = project.version.toString()
+
+            pom {
+                name = project.name
+                description = "Impulse Server Manager for Velocity"
+                url = "https://github.com/Arson-Club/Impulse"
+                licenses {
+                    license {
+                        name = "GNU Affero General Public License"
+                        url = "https://www.gnu.org/licenses/"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "dabb1e"
+                        name = "Dabb1e"
+                        email = "dabb1e@arson.club"
+                    }
+                }
+            }
         }
     }
     repositories {
@@ -90,4 +152,3 @@ publishing {
         }
     }
 }
-

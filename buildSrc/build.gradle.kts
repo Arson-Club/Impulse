@@ -16,35 +16,14 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UnstableApiUsage")
-
-rootProject.name = "impulse"
-
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+plugins {
+    `kotlin-dsl`
+    kotlin("jvm") version "2.1.20-Beta1"
+    kotlin("kapt") version "2.1.20-Beta1"
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") {
-            name = "papermc-repo"
-        }
-        maven("https://oss.sonatype.org/content/groups/public/") {
-            name = "sonatype"
-        }
-    }
-}
-
-sequenceOf(
-    "api",
-    "app",
-    "docker-broker",
-).forEach {
-    val project = ":${rootProject.name}-$it"
-    include(project)
-    project(project).projectDir = file(it)
+dependencies {
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
+    val dokkaVersion = providers.gradleProperty("dokkaVersion").getOrElse("2.0.0")
+    implementation("org.jetbrains.dokka:dokka-gradle-plugin:$dokkaVersion")
 }
