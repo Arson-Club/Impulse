@@ -127,8 +127,8 @@ These are upcoming features that are planned for future releases. They are not g
 - [ ] Kubernetes Broker for advanced deployments
 - [ ] JAR Broker for very simple deployments
 - [ ] Metrics and monitoring endpoints
-- [ ] Refactor Brokers into Addon modules
 - [ ] More configurable client messaging
+- [x] ~Refactor Brokers into Addon modules~
 
 ## Getting Help
 If you require help with Impulse, feel free to open an issue with the `support` tag. I will do my best to respond.
