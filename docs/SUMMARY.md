@@ -23,11 +23,12 @@
     - [remove](reference/remove-command.md)
     - [reconcile](reference/reconcile-command.md)
     - [status](reference/status-command.md)
-- [Brokers]()
-    - [Docker]()
+- [Brokers](reference/brokers.md)
+    - [Docker](reference/docker-broker.md)
     - [JAR]()
     - [Kubernetes]()
-- [Reconciliation]()
+- [Reconciliation](reference/reconciliation.md)
+- [Custom Events](reference/custom-events.md)
 - [Advanced Installation](reference/advanced-installation.md)
 - [Examples]()
     - [Persistent Lobby]()
@@ -36,7 +37,7 @@
 
 # Other
 
-- [Contributing]()
-    - [Adding a new Broker]()
+- [Contributing](contributing/contributing.md)
+    - [Creating a Broker](contributing/creating-a-broker.md)
 - [Licensing](./licensing.md)
   

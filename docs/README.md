@@ -1,4 +1,5 @@
 # Impulse
+
 Impulse is a plugin for the Minecraft server proxy [Velocity](https://papermc.io/software/velocity). It adds the ability
 to dynamically start and stop servers on demand as players join and leave. Why run a server that is only used for a few
 hours a day?
@@ -11,32 +12,41 @@ hours a day?
 </p>
 
 ## Installation
-In short, download our latest release from one of our sources and place it in your Velocity plugins folder. For more detailed instructions see our [documentation](https://arson.club/impulse/getting_started/installation.html) guide.
+
+In short, download our latest release from one of our sources and place it in your Velocity plugins folder. For more
+detailed instructions see our [documentation](https://arson.club/impulse/getting_started/installation.html) guide.
 
 Sources:
+
 - [Modrinth](https://modrinth.com/plugin/impulse-server-manager)
 - [Hangar](https://hangar.papermc.io/ArsonClub/Impulse)
 - [GitHub Releases](https://github.com/Arson-Club/Impulse/releases)
 
 ## Quick Start
+
 > [!TIP]
-> Looking for a more in-depth guide? See our [Getting Started](https://arson.club/impulse/getting-started.html) documentation.
-The following configuration should get you started with a simple lobby server.
+> Looking for a more in-depth guide? See our [Getting Started](https://arson.club/impulse/getting-started.html)
+> documentation.
+> The following configuration should get you started with a simple lobby server.
 
 ### Step 1: Configure Velocity
+
 Simply add the server to your velocity config as normal.
+
 ```toml
 player-info-forwarding = "modern"
 
 [servers]
 lobby = "127.0.0.1:25566"
 
-try = [ "lobby" ]
+try = ["lobby"]
 
 ```
 
 ### Step 2: Configure Impulse
+
 Configure impulse so it know how to manage your server
+
 ```yaml
 instanceName: Bones
 servers:
@@ -60,7 +70,9 @@ servers:
 ```
 
 ### Step 3: Configure the MC Server
+
 Add some config to allow for modern forwarding
+
 ```toml
 # create the file /srv/lobby/config/FabricProxy-Lite.toml
 hackOnlineMode = true
@@ -71,71 +83,71 @@ secret = "<YOUR SECRET FROM forwarding.secret FILE>"
 ```
 
 ### Step 4: Connect
-Simply start your velocity proxy and connect to it from your Minecraft client. If you run into issues check our [documentation](https://arson.club/impulse/getting-started.html) or open an issue!
+
+Simply start your velocity proxy and connect to it from your Minecraft client. If you run into issues check
+our [documentation](https://arson.club/impulse/getting-started.html) or open an issue!
 
 ## Key Features
+
+Impulse has many features to make managing your servers easy! Some highlights include:
+
+* Dynamic server creation and destruction - only run servers when your players are connected
+* Automatic hot reload of configuration - update how impulse runs a server automatically, without a reload command!
+* Unmanaged server support - plays nice with any static servers you have configured in Velocity
+* Custom events - broadcasts custom events that allow you to extend Impulse's functionality
+* Third party Broker support - Implement your own Broker or use someone else's to manage your servers
+* FOSS - Impulse is commited to being free and open source always
+
+## Documentation
+
+For more detailed information on how to use Impulse, see our [documentation](https://arson.club/impulse/).
+For API documentation, see out [KDocs](https://arson.club/impulse/kdocs/).
+
 ### Configuration Hot Reload and Reconciliation
+
 Impulse supports hot reloading of its configuration. This even extends to the server configurations!
 
 When a config change is detected a custom `ConfigReloadEvent` is fired that you can listen for in your own plugins. This
-allows you to inject your own logic into the reload process from your plugins. You can even create "virtual" servers this
+allows you to inject your own logic into the reload process from your plugins. You can even create "virtual" servers
+this
 way that do not exist in the config file.
 
-If a server's configuration is changed, Impulse will attempt to reconcile the running server to match the new configuration.
-The exact behaviour of this is broker specific, but in general it will involve stopping the server, applying the new configuration,
-and restarting automatically. You can control this behavior with the `forceServerReconciliation` and `reconciliationGracePeriod`
-If `forceServerReconciliation` is set to `true` Impulse will immediately trigger a server reconciliation. If set to `false`
-Impulse will only reconcile the server when it naturally restarts, such as after all players leave and the `inactiveTimeout`
+If a server's configuration is changed, Impulse will attempt to reconcile the running server to match the new
+configuration.
+The exact behaviour of this is broker specific, but in general it will involve stopping the server, applying the new
+configuration,
+and restarting automatically. You can control this behavior with the `forceServerReconciliation` and
+`reconciliationGracePeriod`
+If `forceServerReconciliation` is set to `true` Impulse will immediately trigger a server reconciliation. If set to
+`false`
+Impulse will only reconcile the server when it naturally restarts, such as after all players leave and the
+`inactiveTimeout`
 is reached. If the reconciliation requires a server restart, the `reconciliationGracePeriod` is the amount of time in
 seconds the Impulse will give players to finish up before the server is stopped. During this time a configurable message
 will be displayed to all connected clients.
 
-### Unmanaged Servers
-Impulse plays nice with unmanaged servers. If there is no config block for a server in the `config.yaml` Impulse will
-ignore if. This allows you to have a mix of managed and unmanaged servers on your proxy. If you ever do want to move an
-unmanaged server over, simply add the config block and Impulse will adopt it without any downtime.
-
-### Custom Events
-Impulse fires a few custom events that you can listen for in your own plugins.
-
-#### `ConfigReloadEvent`
-This is fired whenever Impulse reloads its configuration. You can listen for this event to inject your own logic into the
-resulting configuration.
-
-## Brokers
-Impulse uses the concept of "brokers" to manage connections to technologies that can run Minecraft servers. How exactly a
-server is created, started, stopped, destroyed, and reconciled is up to the broker's implementation. Currently, Impulse
-only supports a Docker broker, but more are already planned.
-
 ### Docker Broker
+
 This broker connects directly to a Docker daemon. It handles most of the complex start/stop logic internally. Docker is
 relatively easy to set up, while still allowing advanced deployments and architectures. This is the "default" broker.
 
-During reconciliation, docker will not automatically restart the server if resources are removed, such as volumes or ports.
+During reconciliation, docker will not automatically restart the server if resources are removed, such as volumes or
+ports.
 These should be removed on the next restart.
 
 The docker broker is capable of connecting to a remote docker daemon. This is useful for advanced setups where you want
 to run the servers on a different machine. You can find instructions on how to set up a remote docker daemon
 [here](https://docs.docker.com/engine/daemon/remote-access/).
 
-### [WIP] Kubernetes Broker
-Kubernetes is an advanced orchestration platform for running containerized applications. This is for advanced and large
-scale deployments. This broker is still a work in progress and not yet available.
-
-## Planned Features
-These are upcoming features that are planned for future releases. They are not guaranteed and may change.
-- [ ] Kubernetes Broker for advanced deployments
-- [ ] JAR Broker for very simple deployments
-- [ ] Metrics and monitoring endpoints
-- [ ] More configurable client messaging
-- [x] ~Refactor Brokers into Addon modules~
-
 ## Getting Help
-If you require help with Impulse, feel free to open an issue with the `support` tag. I will do my best to respond.
+
+If you require help with Impulse, feel free to open an issue! I will do my best to respond.
 
 ## Contributing
-All contributions are welcome! If you have a feature you would like to see, or a bug you would like to fix, feel free to
+
+All contributions are welcome! For more specific instructions see our [contributing]() documentation.
+For specifics on adding creating your own broker to integrate with another server platform see [our guide]().
+
+If you have a feature you would like to see, or a bug you would like to fix, feel free to
 open a pull request. If you think it is going to be a large change, feel free to open an issue or a discussion first for
 feedback.
-
----
