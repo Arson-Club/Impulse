@@ -57,9 +57,9 @@ class ConfigManager(
     private val configDirectory: Path,
     private val logger: Logger
 ) {
-    private val _watchTask: ScheduledTask
-    private val _watchService: WatchService = FileSystems.getDefault().newWatchService()
-    private var _liveConfig: Configuration = Configuration()
+    private val watchTask: ScheduledTask
+    private val watchService: WatchService = FileSystems.getDefault().newWatchService()
+    private var liveConfig: Configuration = Configuration()
     private val yaml = Yaml(configuration = Yaml.default.configuration.copy(strictMode = false))
 
     /**
@@ -76,12 +76,12 @@ class ConfigManager(
      * Register a watcher on the config directory, and load the initial configuration
      */
     init {
-        _watchTask = proxy.scheduler.buildTask(plugin, this::watchTask).repeat(5, TimeUnit.SECONDS).schedule()
+        watchTask = proxy.scheduler.buildTask(plugin, this::watchTask).repeat(5, TimeUnit.SECONDS).schedule()
         if (!configDirectory.exists()) {
             configDirectory.createDirectories()
         }
         configDirectory.register(
-            _watchService,
+            watchService,
             StandardWatchEventKinds.ENTRY_MODIFY,
             StandardWatchEventKinds.ENTRY_CREATE
         )
@@ -92,43 +92,43 @@ class ConfigManager(
      * The list of servers defined in the current "live" config
      */
     var servers: List<ServerConfig>
-        get() = _liveConfig.servers
+        get() = liveConfig.servers
         private set(value) {
-            _liveConfig.servers = value
+            liveConfig.servers = value
         }
 
     /**
      * The interval in seconds for server maintenance tasks
      */
     var maintenanceInterval: Long
-        get() = _liveConfig.serverMaintenanceInterval
+        get() = liveConfig.serverMaintenanceInterval
         private set(value) {
-            _liveConfig.serverMaintenanceInterval = value
+            liveConfig.serverMaintenanceInterval = value
         }
 
     /**
      * The name of this Impulse instance in the live config
      */
     var instanceName: String
-        get() = _liveConfig.instanceName
+        get() = liveConfig.instanceName
         private set(value) {
-            _liveConfig.instanceName = value
+            liveConfig.instanceName = value
         }
 
     /**
      * The map of messages to send to players
      */
     var messages: Messages
-        get() = _liveConfig.messages
+        get() = liveConfig.messages
         private set(value) {
-            _liveConfig.messages = value
+            liveConfig.messages = value
         }
 
     private fun watchTask() {
         logger.trace("ConfigManager: Running watch task")
         var key: WatchKey?
         var gotUpdate = false
-        while (_watchService.poll().also { key = it } != null) {
+        while (watchService.poll().also { key = it } != null) {
             key?.pollEvents()?.forEach { event ->
                 val changedFile = event.context() as Path
                 if (changedFile.name == CONFIG_FILE_NAME) {
@@ -137,7 +137,7 @@ class ConfigManager(
             }
             if (key?.reset() == false) {
                 key?.cancel()
-                _watchService.close()
+                watchService.close()
             }
         }
         if (gotUpdate) {
@@ -154,7 +154,7 @@ class ConfigManager(
     }
 
     private fun fireAndReload() {
-        var configEvent = ConfigReloadEvent(_liveConfig, _liveConfig, GenericResult.denied())
+        var configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         var yamlNode: YamlNode? = null
         var config = Configuration()
 
@@ -177,23 +177,23 @@ class ConfigManager(
                                 }
                             }.onFailure {
                                 logger.warn("ConfigManager: Unable to deserialize broker config: ${it.message}")
-                                configEvent = ConfigReloadEvent(_liveConfig, _liveConfig, GenericResult.denied())
+                                configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                                 return@onSuccess
                             }
                         }
                     }
                 }
             }
-            configEvent = ConfigReloadEvent(config, _liveConfig, GenericResult.allowed())
+            configEvent = ConfigReloadEvent(config, liveConfig, GenericResult.allowed())
         }.onFailure {
             logger.error("ConfigManager: Failed to parse config file: ${it.message}")
-            configEvent = ConfigReloadEvent(_liveConfig, _liveConfig, GenericResult.denied())
+            configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
 
 
         proxy.eventManager.fire(configEvent).thenAccept { event ->
             if (event.result.isAllowed) {
-                _liveConfig = event.config
+                liveConfig = event.config
                 logger.info("Configuration reloaded")
             } else {
                 logger.warn("Configuration failed to reload, keeping old config")

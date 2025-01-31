@@ -26,7 +26,7 @@ import org.slf4j.Logger
 import kotlin.reflect.KClass
 
 /**
- * A class for managing server broker factories and configuration classes. Thes should be injected from the [BrokerModule].
+ * A class for managing server broker factories and configuration classes. These should be injected from the [club.arson.impulse.server.broker.BrokerModule].
  * Guice module.
  *
  * @property brokers a set of broker factories
@@ -34,7 +34,7 @@ import kotlin.reflect.KClass
  * @constructor creates a new server broker instance
  */
 class ServerBroker @Inject constructor(
-    protected val brokers: Set<BrokerFactory>,
+    private val brokers: Set<BrokerFactory>,
     val configClasses: Map<String, KClass<out Any>>
 ) {
     /**

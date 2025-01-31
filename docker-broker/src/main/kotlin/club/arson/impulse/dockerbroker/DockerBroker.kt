@@ -48,8 +48,8 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     private lateinit var dockerHost: String
 
     init {
-        startupTimeout = serverConfig.startupTimeout
-        stopTimeout = serverConfig.stopTimeout
+        startupTimeout = serverConfig.lifecycleSettings.timeouts.startup
+        stopTimeout = serverConfig.lifecycleSettings.timeouts.shutdown
         configureDockerClient(serverConfig)
     }
 
@@ -74,8 +74,8 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
             .build()
 
         client = DockerClientImpl.getInstance(clientConfig, httpClient)
-        startupTimeout = config.startupTimeout
-        stopTimeout = config.stopTimeout
+        startupTimeout = config.lifecycleSettings.timeouts.startup
+        stopTimeout = config.lifecycleSettings.timeouts.shutdown
     }
 
     private fun createContainer(): Result<Unit> {
@@ -293,8 +293,8 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
                     response = Result.success(Runnable {
                         removeServer()
                         configureDockerClient(config)
-                        stopTimeout = config.stopTimeout
-                        startupTimeout = config.startupTimeout
+                        stopTimeout = config.lifecycleSettings.timeouts.shutdown
+                        startupTimeout = config.lifecycleSettings.timeouts.startup
                         createContainer()
                         if (inspection.state.status == "running") {
                             startContainer()
