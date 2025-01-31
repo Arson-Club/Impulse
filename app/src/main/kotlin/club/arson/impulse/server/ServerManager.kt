@@ -47,7 +47,7 @@ class ServerManager(private val proxy: ProxyServer, private val plugin: Impulse,
 
     private fun serverMaintenance() {
         servers.values.forEach { server ->
-            if (server.serverRef.playersConnected.isEmpty()) {
+            if (server.serverRef.playersConnected.isEmpty() && server.config.lifecycleSettings.allowAutoStop) {
                 logger?.trace("Found empty server ${server.serverRef.serverInfo.name}")
                 server.scheduleShutdown()
             }

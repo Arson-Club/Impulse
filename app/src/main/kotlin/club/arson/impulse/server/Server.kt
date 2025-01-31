@@ -20,6 +20,7 @@ package club.arson.impulse.server
 
 import club.arson.impulse.Impulse
 import club.arson.impulse.ServiceRegistry
+import club.arson.impulse.api.config.ReconcileBehavior
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.config.ShutdownBehavior
 import club.arson.impulse.api.server.Broker
@@ -103,8 +104,9 @@ class Server(
     fun stopServer(): Result<Server> {
         return broker.stopServer().fold(
             onSuccess = {
-                if (!config.forceServerReconciliation && pendingReconciliationHandler != null) {
+                if (config.lifecycleSettings.reconciliationBehavior == ReconcileBehavior.ON_STOP && pendingReconciliationHandler != null) {
                     pendingReconciliationHandler?.run()
+                    broker.stopServer() // Brokers should not restart a stopped server on reconcile, but just make sure it is stopped
                 }
                 Result.success(this)
             },
@@ -125,7 +127,7 @@ class Server(
      * @param delay the delay in seconds before the server is shutdown
      * @return a result containing the server or an error
      */
-    fun scheduleShutdown(delay: Long = config.inactiveTimeout): Result<Server> {
+    fun scheduleShutdown(delay: Long = config.lifecycleSettings.timeouts.inactiveGracePeriod): Result<Server> {
         if (delay > 0 && shutdownTask == null && isRunning()) {
             logger?.debug("Server ${serverRef.serverInfo.name} has no players, scheduling shutdown")
             shutdownTask = proxyServer
@@ -133,13 +135,13 @@ class Server(
                 .buildTask(plugin, Runnable {
                     if (serverRef.playersConnected.isEmpty()) {
                         logger?.info("Server ${serverRef.serverInfo.name} has no players, stopping")
-                        when (config.shutdownBehavior) {
+                        when (config.lifecycleSettings.shutdownBehavior) {
                             ShutdownBehavior.STOP -> stopServer()
                             ShutdownBehavior.REMOVE -> removeServer()
                         }
                     }
                     shutdownTask = null
-                }).delay(config.inactiveTimeout, TimeUnit.SECONDS)
+                }).delay(config.lifecycleSettings.timeouts.inactiveGracePeriod, TimeUnit.SECONDS)
                 .schedule()
         }
         return Result.success(this)
@@ -176,21 +178,25 @@ class Server(
                     config = newConfig
                     pendingReconciliationHandler = null
                 }
+            } ?: run {
+                config = newConfig
+                logger?.error("got here!")
+                return@run null
             }
         }.onFailure {
             return Result.failure(it)
         }
 
         // If we have work to do, and we're forcing, schedule it
-        if (newConfig.forceServerReconciliation && pendingReconciliationHandler != null) {
+        if (newConfig.lifecycleSettings.reconciliationBehavior == ReconcileBehavior.FORCE && pendingReconciliationHandler != null) {
             pendingReconciliationTask = proxyServer.scheduler
                 .buildTask(plugin, Runnable {
                     pendingReconciliationHandler?.run()
                     pendingReconciliationTask = null
                 })
-                .delay(Duration.ofSeconds(newConfig.serverReconciliationGracePeriod))
+                .delay(Duration.ofSeconds(newConfig.lifecycleSettings.timeouts.reconciliationGracePeriod))
                 .schedule()
-            showReconciliationTitle(serverRef, newConfig.serverReconciliationGracePeriod)
+            showReconciliationTitle(serverRef, newConfig.lifecycleSettings.timeouts.reconciliationGracePeriod)
         }
         return Result.success(this)
     }
@@ -203,7 +209,7 @@ class Server(
      */
     fun awaitReady(): Result<Unit> {
         val startTime = System.currentTimeMillis()
-        val timeout = config.startupTimeout * 1000
+        val timeout = config.lifecycleSettings.timeouts.startup * 1000
         var isReady = false
 
         while (!isReady && System.currentTimeMillis() - startTime < timeout) {
@@ -227,7 +233,7 @@ class Server(
      */
     fun handleDisconnect(user: String) {
         val playerCount = serverRef.playersConnected.filter { it.username != user }.size
-        if (playerCount <= 0 && config.inactiveTimeout > 0) {
+        if (playerCount <= 0 && config.lifecycleSettings.allowAutoStop) {
             scheduleShutdown()
         }
     }
@@ -249,7 +255,7 @@ class Server(
         if (pendingReconciliationTask != null) {
             showReconciliationTitle(
                 event.player,
-                config.serverReconciliationGracePeriod
+                config.lifecycleSettings.timeouts.reconciliationGracePeriod
             )
         }
     }

@@ -23,6 +23,7 @@ import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
 
@@ -34,6 +35,12 @@ import org.slf4j.Logger
  * @constructor creates a new PlayerLifecycleListener registered with an optional logger.
  */
 class PlayerLifecycleListener(private val logger: Logger? = null) {
+    private fun getMM(message: String?): Component {
+        return MiniMessage
+            .miniMessage()
+            .deserialize(message ?: "<red>Unknown error</red>")
+    }
+
     /**
      * Handles the ServerPreConnectEvent
      *
@@ -49,25 +56,41 @@ class PlayerLifecycleListener(private val logger: Logger? = null) {
         return EventTask.async {
             val server = ServiceRegistry.instance.serverManager?.getServer(event.originalServer.serverInfo.name)
             if (server != null) {
-                server.startServer().onSuccess {
-                    logger?.trace("Server started successfully, allowing connection")
-                    it.awaitReady()
-                    if (prevServer != null) {
-                        ServiceRegistry.instance.serverManager?.getServer(prevServer.serverInfo.name)
-                            ?.handleDisconnect(event.player.username)
+                var isRunning = server.isRunning()
+
+                // if the server is not running and auto start is enabled, start the server
+                if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
+                    server.startServer().onSuccess {
+                        logger?.trace("Server started successfully, allowing connection")
+                        isRunning = true
+                    }.onFailure {
+                        logger?.warn("Error: failed to start server, rejecting connection")
+                        logger?.warn(it.message)
+                        event.result = ServerPreConnectEvent.ServerResult.denied()
+                        event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.startupError))
                     }
-                }.onFailure {
-                    logger?.warn("Error: failed to start server, rejecting connection")
-                    logger?.warn(it.message)
+                }
+
+                // If we are started, await ready and transfer the player
+                if (isRunning) {
+                    server.awaitReady().onSuccess {
+                        logger?.trace("Server reporting ready, transferring player")
+                        if (prevServer != null) {
+                            ServiceRegistry.instance.serverManager?.getServer(prevServer.serverInfo.name)
+                                ?.handleDisconnect(event.player.username)
+                        }
+                    }.onFailure {
+                        event.result = ServerPreConnectEvent.ServerResult.denied()
+                        event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.startupError))
+                    }
+                } else if (!server.config.lifecycleSettings.allowAutoStart) {
+                    // If we are not started and auto start is disabled, reject the connection with the correct message
                     event.result = ServerPreConnectEvent.ServerResult.denied()
-                    event.player.disconnect(
-                        MiniMessage
-                            .miniMessage()
-                            .deserialize(
-                                ServiceRegistry.instance.configManager?.messages?.startupError
-                                    ?: "<red>Unknown error</red>"
-                            )
-                    )
+                    event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.autoStartDisabled))
+                } else {
+                    // Otherwise reject with an unknown error
+                    event.result = ServerPreConnectEvent.ServerResult.denied()
+                    event.player.disconnect(getMM(null))
                 }
             } else {
                 logger?.debug("Server is not managed by us, taking no action")
