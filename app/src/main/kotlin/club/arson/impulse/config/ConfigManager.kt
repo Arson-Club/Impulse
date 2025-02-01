@@ -77,15 +77,22 @@ class ConfigManager(
      */
     init {
         watchTask = proxy.scheduler.buildTask(plugin, this::watchTask).repeat(5, TimeUnit.SECONDS).schedule()
-        if (!configDirectory.exists()) {
-            configDirectory.createDirectories()
+        runCatching {
+            if (!configDirectory.exists()) {
+                configDirectory.createDirectories()
+            }
+            configDirectory.register(
+                watchService,
+                StandardWatchEventKinds.ENTRY_MODIFY,
+                StandardWatchEventKinds.ENTRY_CREATE
+            )
+        }.onFailure {
+            logger.error("ConfigManager: Failed to register watcher: ${it.message}")
+            logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
+            logger.error("ConfigManager: Please correct this and restart the proxy!")
+        }.onSuccess {
+            fireAndReload()
         }
-        configDirectory.register(
-            watchService,
-            StandardWatchEventKinds.ENTRY_MODIFY,
-            StandardWatchEventKinds.ENTRY_CREATE
-        )
-        fireAndReload()
     }
 
     /**
