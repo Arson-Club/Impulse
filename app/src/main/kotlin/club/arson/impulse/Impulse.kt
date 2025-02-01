@@ -21,8 +21,9 @@ package club.arson.impulse
 import club.arson.impulse.api.events.RegisterBrokerEvent
 import club.arson.impulse.commands.createImpulseCommand
 import club.arson.impulse.config.ConfigManager
+import club.arson.impulse.inject.modules.BaseModule
+import club.arson.impulse.inject.modules.BrokerModule
 import club.arson.impulse.server.ServerManager
-import club.arson.impulse.server.broker.BrokerModule
 import com.google.inject.Guice
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
@@ -84,9 +85,16 @@ class Impulse @Inject constructor(
         logger.info("Initializing Impulse")
         loadPlugins(getLocalPlugins())
 
-        ServiceRegistry.instance.brokerInjector = Guice.createInjector(BrokerModule(logger))
-        ServiceRegistry.instance.configManager = ConfigManager(proxy, this, dataDirectory, logger)
-        ServiceRegistry.instance.serverManager = ServerManager(proxy, this, logger)
+        ServiceRegistry.instance.injector = Guice.createInjector(
+            BrokerModule(logger), BaseModule(
+                this, proxy, dataDirectory, logger
+            )
+        )
+
+        ServiceRegistry.instance.configManager =
+            ServiceRegistry.instance.injector?.getInstance(ConfigManager::class.java)
+        ServiceRegistry.instance.serverManager =
+            ServiceRegistry.instance.injector?.getInstance(ServerManager::class.java)
         proxy.eventManager.register(this, PlayerLifecycleListener(logger))
 
         // Register custom commands

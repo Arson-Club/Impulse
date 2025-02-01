@@ -16,9 +16,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.server.broker
+package club.arson.impulse.inject.modules
 
 import club.arson.impulse.api.server.BrokerFactory
+import club.arson.impulse.inject.providers.BrokerConfigProvider
+import club.arson.impulse.inject.providers.BrokerProvider
 import com.google.inject.AbstractModule
 import com.google.inject.Scopes
 import org.slf4j.Logger
