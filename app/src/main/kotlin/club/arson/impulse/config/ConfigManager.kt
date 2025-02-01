@@ -60,7 +60,7 @@ class ConfigManager(
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
     private var liveConfig: Configuration = Configuration()
-    private val yaml = Yaml(configuration = Yaml.default.configuration.copy(strictMode = false))
+    private val yaml = Yaml(configuration = Yaml.default.configuration.copy())
 
     /**
      * Holds static defines for the ConfigManager
@@ -146,45 +146,93 @@ class ConfigManager(
     }
 
     @OptIn(InternalSerializationApi::class)
-    private fun <T : Any> configHelper(clazz: KClass<T>): Result<KSerializer<T>> {
+    private fun <T : Any> getBrokerConfigSerializer(clazz: KClass<T>): Result<KSerializer<T>> {
         clazz.serializerOrNull()?.let {
             return Result.success(it)
         }
         return Result.failure(IllegalArgumentException("class is not serializable"))
     }
 
+    private inline fun <reified T> tryDecodeFromYamlNode(yamlNode: YamlNode): Result<T> {
+        return runCatching {
+            yaml.decodeFromYamlNode(yamlNode)
+        }
+    }
+
+    private fun getServerConfig(server: YamlNode): Result<ServerConfig> {
+        val brokerConfigClasses = ServiceRegistry.instance.getServerBroker().configClasses
+        // Get the type of the server so we can get the correct broker config key
+        return (server as YamlMap).get<YamlScalar>("type")?.content?.let { type ->
+            brokerConfigClasses[type]?.let { brokerConfigClass ->
+                // Partition out the broker config from the base server config
+                val rawServerConfig: MutableMap<YamlScalar, YamlNode> = mutableMapOf()
+                var rawBrokerConfig: YamlNode? = null
+                server.entries.forEach {
+                    if (it.key.content != type) {
+                        rawServerConfig[it.key] = it.value
+                    } else {
+                        rawBrokerConfig = it.value
+                    }
+                }
+                if (rawBrokerConfig == null) {
+                    return Result.failure(Throwable("No broker config found for server type $type"))
+                }
+                // Try and decode the server config, then the broker config into that
+                tryDecodeFromYamlNode<ServerConfig>(YamlMap(rawServerConfig, server.path))
+                    .onSuccess { serverConfig ->
+                        getBrokerConfigSerializer(brokerConfigClass).onSuccess { serializer ->
+                            runCatching { yaml.decodeFromYamlNode(serializer, rawBrokerConfig!!) }
+                                .onSuccess { serverConfig.config = it }
+                        }
+                    }
+            } ?: Result.failure(Throwable("No broker config registered for type $type"))
+        } ?: Result.failure(IllegalArgumentException("Server type not specified"))
+    }
+
+    /**
+     * Parses the new config, fires a [club.arson.impulse.api.events.ConfigReloadEvent] and reloads the config if
+     * allowed.
+     *
+     * This function is more complex to allow us to keep strict parsing on even while deserializing into arbitrary
+     * broker config classes. This provides much better error reporting to the user.
+     */
     private fun fireAndReload() {
         var configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         var yamlNode: YamlNode? = null
-        var config = Configuration()
+        var config: Configuration
 
         runCatching {
-            // First we load in the base "global" configuration
+            // First we get the config as a node tree
             yamlNode = yaml.parseToYamlNode(configDirectory.resolve(CONFIG_FILE_NAME).inputStream())
-            config = yaml.decodeFromYamlNode<Configuration>(yamlNode!!)
         }.onSuccess {
-            val brokerConfigClasses = ServiceRegistry.instance.getServerBroker().configClasses
-            // For each server we attempt to get it's "type" and use that to look up an appropriate Broker config class.
-            // If we find one, we attempt to deserialize from the yamlNode AST and attach it as the "config" property of the ServerConfig
+            // Then we parse the servers into a list
+            val servers = mutableListOf<ServerConfig>()
             yamlNode!!.yamlMap.get<YamlList>("servers")?.items?.forEach { server ->
-                (server as YamlMap).get<YamlScalar>("type")?.content?.let { type ->
-                    brokerConfigClasses[type]?.let { configClass ->
-                        server.get<YamlMap>(type)?.let { rawBrokerConfig ->
-                            configHelper(configClass).onSuccess { brokerConfigSerializer ->
-                                val brokerConfig = yaml.decodeFromYamlNode(brokerConfigSerializer, rawBrokerConfig)
-                                server.get<YamlScalar>("name")?.content?.let { name ->
-                                    config.servers.find { it.name == name }?.config = brokerConfig
-                                }
-                            }.onFailure {
-                                logger.warn("ConfigManager: Unable to deserialize broker config: ${it.message}")
-                                configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
-                                return@onSuccess
-                            }
-                        }
+                getServerConfig(server)
+                    .onSuccess { servers.add(it) }
+                    .onFailure {
+                        logger.error("ConfigManager: Failed to parse server config: ${it.message}")
+                        configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                     }
+            }
+            // Next we remove the servers from the raw config
+            val rawConfig = mutableMapOf<YamlScalar, YamlNode>()
+            yamlNode!!.yamlMap.entries.forEach {
+                if (it.key.content != "servers") {
+                    rawConfig[it.key] = it.value
                 }
             }
-            configEvent = ConfigReloadEvent(config, liveConfig, GenericResult.allowed())
+            // We then parse the global config and add back in the servers
+            tryDecodeFromYamlNode<Configuration>(YamlMap(rawConfig, yamlNode!!.path))
+                .onSuccess {
+                    config = it
+                    config.servers = servers
+                    configEvent = ConfigReloadEvent(liveConfig, config, GenericResult.allowed())
+                }
+                .onFailure {
+                    logger.error("ConfigManager: Failed to parse global config: ${it.message}")
+                    configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
+                }
         }.onFailure {
             logger.error("ConfigManager: Failed to parse config file: ${it.message}")
             configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
