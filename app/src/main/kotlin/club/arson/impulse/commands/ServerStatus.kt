@@ -49,7 +49,10 @@ fun getServerStatusMessage(name: String, status: Status, padTo: Int = 0): Compon
 fun serverStatusTable(servers: List<Server>): Component {
     val table = Component.text()
         .content("Server Status")
-    val maxLength = servers.maxOf { it.config.name.length }
+    var maxLength = 0;
+    if (servers.isNotEmpty()) {
+        maxLength = servers.maxOf { it.config.name.length }
+    }
 
     servers.forEach { server ->
         table.appendNewline().append(getServerStatusMessage(server.config.name, server.getStatus(), maxLength))

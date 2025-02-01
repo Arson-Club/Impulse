@@ -180,7 +180,6 @@ class Server(
                 }
             } ?: run {
                 config = newConfig
-                logger?.error("got here!")
                 return@run null
             }
         }.onFailure {

@@ -234,7 +234,7 @@ class ConfigManager(
                 .onSuccess {
                     config = it
                     config.servers = servers
-                    configEvent = ConfigReloadEvent(liveConfig, config, GenericResult.allowed())
+                    configEvent = ConfigReloadEvent(config, liveConfig, GenericResult.allowed())
                 }
                 .onFailure {
                     logger.error("ConfigManager: Failed to parse global config: ${it.message}")
@@ -244,7 +244,6 @@ class ConfigManager(
             logger.error("ConfigManager: Failed to parse config file: ${it.message}")
             configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
-
 
         proxy.eventManager.fire(configEvent).thenAccept { event ->
             if (event.result.isAllowed) {
