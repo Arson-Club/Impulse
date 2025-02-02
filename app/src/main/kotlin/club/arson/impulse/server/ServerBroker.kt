@@ -26,7 +26,7 @@ import org.slf4j.Logger
 import kotlin.reflect.KClass
 
 /**
- * A class for managing server broker factories and configuration classes. These should be injected from the [club.arson.impulse.server.broker.BrokerModule].
+ * A class for managing server broker factories and configuration classes. These should be injected from the [club.arson.impulse.inject.modules.BrokerModule].
  * Guice module.
  *
  * @property brokers a set of broker factories

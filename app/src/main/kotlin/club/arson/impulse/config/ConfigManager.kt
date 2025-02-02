@@ -243,7 +243,12 @@ class ConfigManager @Inject constructor(
                     configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                 }
         }.onFailure {
-            logger?.error("ConfigManager: Failed to parse config file: ${it.message}")
+            if (it is EmptyYamlDocumentException) {
+                logger?.warn("ConfigManager: Config file is empty, using default configuration")
+                logger?.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/")
+            } else {
+                logger?.error("ConfigManager: Failed to parse config file: ${it.message}")
+            }
             configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
 

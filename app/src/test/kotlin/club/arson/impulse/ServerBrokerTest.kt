@@ -18,30 +18,35 @@
 
 package club.arson.impulse
 
-import club.arson.impulse.config.ConfigManager
-import club.arson.impulse.inject.modules.BaseModule
-import club.arson.impulse.inject.modules.BrokerModule
+import club.arson.impulse.api.config.ServerConfig
+import club.arson.impulse.inject.TestModule
+import club.arson.impulse.server.ServerBroker
 import com.google.inject.Guice
-import com.velocitypowered.api.proxy.ProxyServer
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
-import java.nio.file.Path
+import org.junit.jupiter.api.Test
 
-class ConfigManagerTest {
-    val plugin: Impulse = mockk()
-    val proxy: ProxyServer = mockk()
-    val configPath: Path = mockk()
-    val injector = Guice.createInjector(BaseModule(plugin, proxy, configPath), BrokerModule())
-    val configFile: Path = mockk()
-    lateinit var configManager: ConfigManager
+class ServerBrokerTest {
+    private lateinit var serverBroker: ServerBroker
 
     @BeforeEach
-    fun setup() {
-        every { configPath.resolve("config.yaml") } returns configFile
-        configManager = injector.getInstance(ConfigManager::class.java)
-
+    fun setUp() {
+        val injector = Guice.createInjector(TestModule())
+        serverBroker = injector.getInstance(ServerBroker::class.java)
     }
 
+    @Test
+    fun testCreateFromConfig() {
+        val serverConfig = mockk<ServerConfig>()
+        every { serverConfig.type } returnsMany listOf("test", "invalid")
 
+        // We should find something
+        var result = serverBroker.createFromConfig(serverConfig)
+        assert(result.isSuccess)
+
+        // No broker should be found
+        result = serverBroker.createFromConfig(serverConfig)
+        assert(result.isFailure)
+    }
 }
