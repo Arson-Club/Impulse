@@ -46,7 +46,7 @@ class ServiceRegistry {
      */
     var serverManager: ServerManager? = null
         set(value) {
-            if (serverManager != null) {
+            if (value != null && serverManager != null) {
                 throw IllegalStateException("ServerManager already registered")
             }
             field = value
@@ -59,7 +59,7 @@ class ServiceRegistry {
      */
     var configManager: ConfigManager? = null
         set(value) {
-            if (configManager != null) {
+            if (value != null && configManager != null) {
                 throw IllegalStateException("ConfigManager already registered")
             }
             field = value
@@ -71,9 +71,9 @@ class ServiceRegistry {
      * We use the Guice framework to dynamically inject Brokers. This allows you to access the set of currently
      * registered Brokers and Broker Configs.
      */
-    var brokerInjector: Injector? = null
+    var injector: Injector? = null
         set(value) {
-            if (brokerInjector != null) {
+            if (value != null && injector != null) {
                 throw IllegalStateException("BrokerInjector already registered")
             }
             field = value
@@ -84,7 +84,16 @@ class ServiceRegistry {
      * @return a new [ServerBroker] instance
      */
     fun getServerBroker(): ServerBroker {
-        return brokerInjector?.getInstance(ServerBroker::class.java)
+        return injector?.getInstance(ServerBroker::class.java)
             ?: throw IllegalStateException("BrokerInjector not registered")
+    }
+
+    /**
+     * Resets the registry to allow for reinitialization
+     */
+    fun reset() {
+        serverManager = null
+        configManager = null
+        injector = null
     }
 }

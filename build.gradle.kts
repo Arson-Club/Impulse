@@ -47,6 +47,7 @@ subprojects {
         kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
         implementation("com.charleskorn.kaml:kaml:0.67.0")
+        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
     }
 
     val targetJavaVersion = 17

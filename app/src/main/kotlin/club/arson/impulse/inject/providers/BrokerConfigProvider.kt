@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.server.broker
+package club.arson.impulse.inject.providers
 
 import club.arson.impulse.api.config.BrokerConfig
 import com.google.inject.Provider

@@ -28,8 +28,13 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
 import org.slf4j.Logger
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-class ServerManager(private val proxy: ProxyServer, private val plugin: Impulse, private val logger: Logger? = null) {
+class ServerManager @Inject constructor(
+    private val proxy: ProxyServer,
+    private val plugin: Impulse,
+    private val logger: Logger? = null
+) {
     var servers = mutableMapOf<String, Server>()
     private var maintenanceInterval: Long
     private var maintenanceTask: ScheduledTask

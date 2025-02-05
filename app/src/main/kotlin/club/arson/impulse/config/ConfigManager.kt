@@ -24,6 +24,7 @@ import club.arson.impulse.api.config.Configuration
 import club.arson.impulse.api.config.Messages
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.events.ConfigReloadEvent
+import club.arson.impulse.inject.modules.PluginDir
 import com.charleskorn.kaml.*
 import com.velocitypowered.api.event.ResultedEvent.GenericResult
 import com.velocitypowered.api.proxy.ProxyServer
@@ -34,6 +35,7 @@ import kotlinx.serialization.serializerOrNull
 import org.slf4j.Logger
 import java.nio.file.*
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -51,11 +53,11 @@ import kotlin.reflect.KClass
  * @property logger a ref to the Velocity logger
  * @constructor creates a new ConfigManager instance
  */
-class ConfigManager(
+class ConfigManager @Inject constructor(
     private val proxy: ProxyServer,
     plugin: Impulse,
-    private val configDirectory: Path,
-    private val logger: Logger
+    @PluginDir private val configDirectory: Path,
+    private val logger: Logger?
 ) {
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -87,9 +89,9 @@ class ConfigManager(
                 StandardWatchEventKinds.ENTRY_CREATE
             )
         }.onFailure {
-            logger.error("ConfigManager: Failed to register watcher: ${it.message}")
-            logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
-            logger.error("ConfigManager: Please correct this and restart the proxy!")
+            logger?.error("ConfigManager: Failed to register watcher: ${it.message}")
+            logger?.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
+            logger?.error("ConfigManager: Please correct this and restart the proxy!")
         }.onSuccess {
             fireAndReload()
         }
@@ -132,7 +134,7 @@ class ConfigManager(
         }
 
     private fun watchTask() {
-        logger.trace("ConfigManager: Running watch task")
+        logger?.trace("ConfigManager: Running watch task")
         var key: WatchKey?
         var gotUpdate = false
         while (watchService.poll().also { key = it } != null) {
@@ -218,7 +220,7 @@ class ConfigManager(
                 getServerConfig(server)
                     .onSuccess { servers.add(it) }
                     .onFailure {
-                        logger.error("ConfigManager: Failed to parse server config: ${it.message}")
+                        logger?.error("ConfigManager: Failed to parse server config: ${it.message}")
                         configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                     }
             }
@@ -237,20 +239,25 @@ class ConfigManager(
                     configEvent = ConfigReloadEvent(config, liveConfig, GenericResult.allowed())
                 }
                 .onFailure {
-                    logger.error("ConfigManager: Failed to parse global config: ${it.message}")
+                    logger?.error("ConfigManager: Failed to parse global config: ${it.message}")
                     configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                 }
         }.onFailure {
-            logger.error("ConfigManager: Failed to parse config file: ${it.message}")
+            if (it is EmptyYamlDocumentException) {
+                logger?.warn("ConfigManager: Config file is empty, using default configuration")
+                logger?.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/")
+            } else {
+                logger?.error("ConfigManager: Failed to parse config file: ${it.message}")
+            }
             configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
 
         proxy.eventManager.fire(configEvent).thenAccept { event ->
             if (event.result.isAllowed) {
                 liveConfig = event.config
-                logger.info("Configuration reloaded")
+                logger?.info("Configuration reloaded")
             } else {
-                logger.warn("Configuration failed to reload, keeping old config")
+                logger?.warn("Configuration failed to reload, keeping old config")
             }
         }
     }
