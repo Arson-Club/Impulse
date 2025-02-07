@@ -22,13 +22,16 @@ import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.server.Broker
 import club.arson.impulse.api.server.Status
 import com.github.dockerjava.api.DockerClient
+import com.github.dockerjava.api.command.InspectImageResponse
 import com.github.dockerjava.api.command.PullImageResultCallback
 import com.github.dockerjava.api.exception.NotFoundException
 import com.github.dockerjava.api.model.*
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.core.DockerClientImpl
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
+import kotlinx.coroutines.*
 import org.slf4j.Logger
+import java.lang.Runnable
 import java.time.Duration
 
 /**
@@ -46,11 +49,14 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     private lateinit var client: DockerClient
     private lateinit var dockerConfig: DockerServerConfig
     private lateinit var dockerHost: String
+    private var pullImageTask: Deferred<Result<Unit>>
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
         startupTimeout = serverConfig.lifecycleSettings.timeouts.startup
         stopTimeout = serverConfig.lifecycleSettings.timeouts.shutdown
         configureDockerClient(serverConfig)
+        pullImageTask = tryPullImageIfMissing(dockerConfig.image, scope)
     }
 
     private fun configureDockerClient(config: ServerConfig) {
@@ -78,25 +84,73 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
         stopTimeout = config.lifecycleSettings.timeouts.shutdown
     }
 
-    private fun createContainer(): Result<Unit> {
-        // Pull the image if it is missing
-        kotlin.runCatching { client.inspectImageCmd(dockerConfig.image).exec() }.onSuccess {
-            logger?.debug("Docker Broker: image ${dockerConfig.image} exists")
-        }.onFailure {
-            logger?.info("Docker Broker: image ${dockerConfig.image} does not exist, pulling...")
-            kotlin.runCatching {
-                client.pullImageCmd(dockerConfig.image).exec(PullImageResultCallback()).awaitCompletion()
-            }.onSuccess {
-                logger?.info("Docker Broker: image ${dockerConfig.image} pulled successfully")
-            }.onFailure {
-                logger?.info("Docker Broker: image ${dockerConfig.image} failed to pull ${it.message}")
-                return Result.failure(it)
+    private fun tryPullImageIfMissing(image: String, scope: CoroutineScope): Deferred<Result<Unit>> {
+        // Default to latest if no tag is specified
+        val taggedImage = if (image.contains(":")) image else "$image:latest"
+
+        return scope.async {
+            when (dockerConfig.imagePullPolicy) {
+                ImagePullPolicy.ALWAYS -> {
+                    logger?.info("Docker Broker: Pulling image $taggedImage")
+                    pullImage(taggedImage)
+                }
+
+                ImagePullPolicy.IF_NOT_PRESENT -> pullImageIfNotPresent(taggedImage)
+
+                ImagePullPolicy.NEVER -> {
+                    logger?.info("Docker Broker: Skipping image pull for $taggedImage")
+                    Result.success(Unit)
+                }
             }
         }
+    }
+
+    private fun pullImageIfNotPresent(taggedImage: String): Result<Unit> {
+        val inspectionResult = inspectImage(taggedImage)
+        return if (inspectionResult.isSuccess) {
+            logger?.info("Docker Broker: image $taggedImage exists")
+            Result.success(Unit)
+        } else {
+            logger?.info("Docker Broker: image $taggedImage does not exist, pulling (This may take a while)...")
+            pullImage(taggedImage)
+        }
+    }
+
+    class ProgressCallback(private val logger: Logger? = null) : PullImageResultCallback() {
+        override fun onNext(item: PullResponseItem?) {
+            super.onNext(item)
+            logger?.debug("Docker Broker: Pulling image: ${item?.status} ${item?.progressDetail?.current}/${item?.progressDetail?.total}")
+        }
+    }
+
+    private fun pullImage(image: String): Result<Unit> {
+        return runCatching {
+            client.pullImageCmd(image).exec(ProgressCallback(logger)).awaitCompletion()
+        }.fold(
+            onSuccess = {
+                logger?.info("Docker Broker: image $image pulled successfully")
+                Result.success(Unit)
+            },
+            onFailure = { exception ->
+                logger?.info("Docker Broker: image $image failed to pull: ${exception.message}")
+                Result.failure(exception)
+            }
+        )
+    }
+
+    private fun inspectImage(image: String): Result<InspectImageResponse> {
+        return runCatching { client.inspectImageCmd(image).exec() }
+    }
+
+    private fun createContainer(autoStart: Boolean = dockerConfig.autoStartOnCreate): Result<Unit> {
+        // Pull the image if it is missing
+        runBlocking { pullImageTask.await() }
+            .onFailure { return Result.failure(it) }
 
         // Create the container
         val binds = ArrayList<Bind>()
-        for ((hostPath, mount) in dockerConfig.volumes) {
+        dockerConfig.volumes.forEach {
+            val (hostPath, mount) = it.split(":")
             binds.add(Bind(hostPath, Volume(mount)))
         }
         val hostConfig = HostConfig
@@ -118,7 +172,7 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
         } catch (e: Exception) {
             return Result.failure(e)
         }
-        return startContainer()
+        return if (autoStart) startContainer() else Result.success(Unit)
     }
 
     private fun startContainer(): Result<Unit> {
@@ -213,8 +267,8 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
             "restarting" -> awaitContainerStart()
             "created", "paused", "exited" -> startContainer()
             "removing" -> awaitContainerStop().let { if (it.isSuccess) startContainer() else it }
-            "dead" -> removeServer().let { if (it.isSuccess) createContainer() else it }
-            null -> createContainer()
+            "dead" -> removeServer().let { if (it.isSuccess) createContainer(true) else it }
+            null -> createContainer(true)
             else -> Result.failure(Throwable("Server $name is in unknown state, aborting!"))
         }
     }
@@ -254,7 +308,7 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     /**
      * Creates a closure that can be run to reconcile the server's state with the new configuration.
      *
-     * When we a server's configuration is updated this method is called generate a closure that can reconcile the
+     * When a server's configuration is updated this method is called generate a closure that can reconcile the
      * current state with the new configuration. This can either be called immediately, or scheduled as a future task.
      * For the docker broker executing the closure normally results in the server being stopped, removed, and recreated
      * with the new configuration.
@@ -272,6 +326,7 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
                 val dockerConfig = config.config as? DockerServerConfig
                 val hostChanged = dockerConfig?.hostPath != dockerHost
                 val imageChanged = inspection.config.image != dockerConfig?.image
+                val pullPolicyChanged = this.dockerConfig.imagePullPolicy != dockerConfig?.imagePullPolicy
 
                 val currentEnv = dockerConfig?.env?.map { "${it.key}=${it.value}" }?.toSet() ?: emptySet()
                 val liveEnv = inspection.config.env?.toSet() ?: emptySet()
@@ -288,16 +343,29 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
 
                 val portsChanged = !livePortConfig.containsAll(desiredPortConfig ?: emptyList())
                 val volumesChanged = !inspection.hostConfig.binds.map { Pair(it.path, it.volume.path) }
-                    .containsAll(dockerConfig?.volumes?.map { Pair(it.key, it.value) } ?: emptyList())
+                    .containsAll(dockerConfig?.volumes?.map {
+                        val (hostPath, mount) = it.split(":")
+                        Pair(hostPath, mount)
+                    } ?: emptyList())
+                if (imageChanged && dockerConfig?.image != null) {
+                    pullImageTask = tryPullImageIfMissing(dockerConfig.image, scope)
+                }
                 if (imageChanged || portsChanged || volumesChanged || hostChanged || envChanged) {
                     response = Result.success(Runnable {
                         removeServer()
                         configureDockerClient(config)
                         stopTimeout = config.lifecycleSettings.timeouts.shutdown
                         startupTimeout = config.lifecycleSettings.timeouts.startup
-                        createContainer()
-                        if (inspection.state.status == "running") {
-                            startContainer()
+                        if (pullPolicyChanged) {
+                            pullImageTask = tryPullImageIfMissing(dockerConfig!!.image, scope)
+                        }
+                        createContainer(inspection.state.status == "running")
+                    })
+                } else {
+                    response = Result.success(Runnable {
+                        this.dockerConfig = config.config as DockerServerConfig
+                        if (pullPolicyChanged) {
+                            pullImageTask = tryPullImageIfMissing(dockerConfig!!.image, scope)
                         }
                     })
                 }
