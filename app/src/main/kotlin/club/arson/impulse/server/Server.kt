@@ -58,6 +58,7 @@ class Server(
     private var shutdownTask: ScheduledTask? = null
     private var pendingReconciliationTask: ScheduledTask? = null
     private var pendingReconciliationHandler: Runnable? = null
+    var pinned = false
 
     /**
      * Registers the server with the event manager to handle configuration updates
@@ -102,16 +103,20 @@ class Server(
      * @return a result containing the server or an error
      */
     fun stopServer(): Result<Server> {
-        return broker.stopServer().fold(
-            onSuccess = {
-                if (config.lifecycleSettings.reconciliationBehavior == ReconcileBehavior.ON_STOP && pendingReconciliationHandler != null) {
-                    pendingReconciliationHandler?.run()
-                    broker.stopServer() // Brokers should not restart a stopped server on reconcile, but just make sure it is stopped
-                }
-                Result.success(this)
-            },
-            onFailure = { Result.failure(it) }
-        )
+        return if (!pinned) {
+            broker.stopServer().fold(
+                onSuccess = {
+                    if (config.lifecycleSettings.reconciliationBehavior == ReconcileBehavior.ON_STOP && pendingReconciliationHandler != null) {
+                        pendingReconciliationHandler?.run()
+                        broker.stopServer() // Brokers should not restart a stopped server on reconcile, but just make sure it is stopped
+                    }
+                    Result.success(this)
+                },
+                onFailure = { Result.failure(it) }
+            )
+        } else {
+            Result.failure(Throwable("Server ${serverRef.serverInfo.name} is pinned and cannot be stopped"))
+        }
     }
 
     /**
@@ -128,7 +133,7 @@ class Server(
      * @return a result containing the server or an error
      */
     fun scheduleShutdown(delay: Long = config.lifecycleSettings.timeouts.inactiveGracePeriod): Result<Server> {
-        if (delay > 0 && shutdownTask == null && isRunning()) {
+        if (delay >= 0 && shutdownTask == null && isRunning()) {
             logger?.debug("Server ${serverRef.serverInfo.name} has no players, scheduling shutdown")
             shutdownTask = proxyServer
                 .scheduler
@@ -152,10 +157,14 @@ class Server(
      * @return a result containing the server or an error
      */
     fun removeServer(): Result<Server> {
-        return broker.removeServer().fold(
-            onSuccess = { Result.success(this) },
-            onFailure = { Result.failure(it) }
-        )
+        return if (!pinned) {
+            broker.removeServer().fold(
+                onSuccess = { Result.success(this) },
+                onFailure = { Result.failure(it) }
+            )
+        } else {
+            Result.failure(Throwable("Server ${serverRef.serverInfo.name} is pinned and cannot be removed"))
+        }
     }
 
     /**
@@ -232,7 +241,7 @@ class Server(
      */
     fun handleDisconnect(user: String) {
         val playerCount = serverRef.playersConnected.filter { it.username != user }.size
-        if (playerCount <= 0 && config.lifecycleSettings.allowAutoStop) {
+        if (playerCount <= 0 && config.lifecycleSettings.allowAutoStop && !pinned) {
             scheduleShutdown()
         }
     }

@@ -24,10 +24,15 @@ fun createImpulseCommand(): BrigadierCommand {
     val startNode = createStartServerCommand()
     val commandNode = BrigadierCommand.literalArgumentBuilder("impulse")
         .then(startNode)
-        .then(BrigadierCommand.literalArgumentBuilder("warm").redirect(startNode.build()))
+        .then(
+            BrigadierCommand.literalArgumentBuilder("warm")
+                .requires { source -> source.hasPermission("impulse.server.start") }
+                .redirect(startNode.build()))
         .then(createStopServerCommand())
         .then(createRemoveServerCommand())
         .then(createReconcileCommand())
         .then(createServerStatusCommand())
+        .then(createPinServerCommand())
+        .then(createUnpinServerCommand())
     return BrigadierCommand(commandNode)
 }

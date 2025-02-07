@@ -52,7 +52,7 @@ class ServerManager @Inject constructor(
 
     private fun serverMaintenance() {
         servers.values.forEach { server ->
-            if (server.serverRef.playersConnected.isEmpty() && server.config.lifecycleSettings.allowAutoStop) {
+            if (server.serverRef.playersConnected.isEmpty() && server.config.lifecycleSettings.allowAutoStop && !server.pinned) {
                 logger?.trace("Found empty server ${server.serverRef.serverInfo.name}")
                 server.scheduleShutdown()
             }
