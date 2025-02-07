@@ -19,7 +19,14 @@
 package club.arson.impulse.dockerbroker
 
 import club.arson.impulse.api.config.BrokerConfig
+import club.arson.impulse.dockerbroker.ImagePullPolicy.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 /**
  * Configuration for a Docker server
@@ -28,15 +35,52 @@ import kotlinx.serialization.Serializable
  * @property image Docker image to use for the server
  * @property portBindings List of port mappings (i.e "25566:25565")
  * @property hostPath Path to docker socket (accepts network sockets)
- * @property volumes Volumes to mount into the container ("/host/path": "/container/path")
+ * @property volumes Volumes to mount into the container ("/host/path:/container/path")
  * @property env Map of environment variables to set in the container
  */
 @BrokerConfig("docker")
 @Serializable
 data class DockerServerConfig(
     var image: String = "itzg/minecraft-server",
+    var imagePullPolicy: ImagePullPolicy = IF_NOT_PRESENT,
+    var autoStartOnCreate: Boolean = false,
     var portBindings: List<String> = listOf("25565:25565"),
     var hostPath: String = "unix:///var/run/docker.sock",
-    var volumes: Map<String, String> = emptyMap(),
+    var volumes: List<String> = emptyList(),
     var env: Map<String, String> = mapOf("ONLINE_MODE" to "false"),
 )
+
+/**
+ * Image pull policy for a Docker container images
+ *
+ * @property ALWAYS Always pull the image
+ * @property IF_NOT_PRESENT Pull the image if it is not present
+ * @property NEVER Never pull the image
+ */
+@Serializable(with = ImagePullPolicySerializer::class)
+enum class ImagePullPolicy(private val value: String) {
+    ALWAYS("Always"),
+    IF_NOT_PRESENT("IfNotPresent"),
+    NEVER("Never");
+
+    override fun toString(): String {
+        return value
+    }
+}
+
+/**
+ * Serializer for [ImagePullPolicy]
+ */
+object ImagePullPolicySerializer : KSerializer<ImagePullPolicy> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("ImagePullPolicy", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: ImagePullPolicy) {
+        encoder.encodeString(value.toString())
+    }
+
+    override fun deserialize(decoder: Decoder): ImagePullPolicy {
+        val value = decoder.decodeString()
+        return ImagePullPolicy.entries.first { it.toString() == value }
+    }
+}
