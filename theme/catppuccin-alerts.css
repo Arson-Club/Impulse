@@ -1,0 +1,86 @@
+/*
+ * MIT License
+ * 
+ * Copyright (c) 2021 Catppuccin
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+.latte .mdbook-alerts-note {
+  --mdbook-alerts-color: #1e66f5;
+}
+.latte .mdbook-alerts-tip {
+  --mdbook-alerts-color: #40a02b;
+}
+.latte .mdbook-alerts-important {
+  --mdbook-alerts-color: #8839ef;
+}
+.latte .mdbook-alerts-warning {
+  --mdbook-alerts-color: #df8e1d;
+}
+.latte .mdbook-alerts-caution {
+  --mdbook-alerts-color: #d20f39;
+}
+
+.frappe .mdbook-alerts-note {
+  --mdbook-alerts-color: #8caaee;
+}
+.frappe .mdbook-alerts-tip {
+  --mdbook-alerts-color: #a6d189;
+}
+.frappe .mdbook-alerts-important {
+  --mdbook-alerts-color: #ca9ee6;
+}
+.frappe .mdbook-alerts-warning {
+  --mdbook-alerts-color: #e5c890;
+}
+.frappe .mdbook-alerts-caution {
+  --mdbook-alerts-color: #e78284;
+}
+
+.macchiato .mdbook-alerts-note {
+  --mdbook-alerts-color: #8aadf4;
+}
+.macchiato .mdbook-alerts-tip {
+  --mdbook-alerts-color: #a6da95;
+}
+.macchiato .mdbook-alerts-important {
+  --mdbook-alerts-color: #c6a0f6;
+}
+.macchiato .mdbook-alerts-warning {
+  --mdbook-alerts-color: #eed49f;
+}
+.macchiato .mdbook-alerts-caution {
+  --mdbook-alerts-color: #ed8796;
+}
+
+.mocha .mdbook-alerts-note {
+  --mdbook-alerts-color: #89b4fa;
+}
+.mocha .mdbook-alerts-tip {
+  --mdbook-alerts-color: #a6e3a1;
+}
+.mocha .mdbook-alerts-important {
+  --mdbook-alerts-color: #cba6f7;
+}
+.mocha .mdbook-alerts-warning {
+  --mdbook-alerts-color: #f9e2af;
+}
+.mocha .mdbook-alerts-caution {
+  --mdbook-alerts-color: #f38ba8;
+}

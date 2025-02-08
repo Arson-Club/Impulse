@@ -1,0 +1,35 @@
+name: DeployMDBook
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: github-pages
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: install latest mdbook
+        run: |
+          cargo install mdbook
+          cargo install mdbook-alerts
+      - name: Build Book
+        run: |
+          mdbook build
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Upload artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'book'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
