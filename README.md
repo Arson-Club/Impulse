@@ -14,7 +14,7 @@ hours a day?
 ## Installation
 
 In short, download our latest release from one of our sources and place it in your Velocity plugins folder. For more
-detailed instructions see our [documentation](https://arson.club/impulse/getting_started/installation.html) guide.
+detailed instructions see our [installation](https://arson-club.github.io/Impulse/getting_started/installation.html) guide.
 
 Sources:
 
@@ -30,9 +30,10 @@ For API documentation, see out [KDocs]().
 ## Quick Start
 
 > [!TIP]
-> Looking for a more in-depth guide? See our [Getting Started](https://arson.club/impulse/getting-started.html)
+> Looking for a more in-depth guide? See our [Getting Started](https://arson-club.github.io/Impulse/getting_started/index.html)
 > documentation.
-> The following configuration should get you started with a simple lobby server.
+
+The following configuration should get you started with a simple lobby server.
 
 ### Step 1: Configure Velocity
 
@@ -112,6 +113,6 @@ respond.
 ## Contributing
 
 All contributions are welcome! For more specific instructions see
-our [contributing](https://arson-club.github.io/Impulse/contributing/contributing.html) documentation.
+our [contributing](https://arson-club.github.io/Impulse/contributing/contributing.html) page.
 
-For specifics on adding creating your own broker to integrate with another server platform see [our guide]().
+For specifics on adding creating your own broker to integrate with another server platform see [our guide](https://arson-club.github.io/Impulse/contributing/creating-a-broker.html).
