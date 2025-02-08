@@ -65,6 +65,7 @@ tasks {
         relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
         relocate("com.github.docker.java", "club.arson.impulse.docker.java")
         archiveClassifier.set("")
+        archiveBaseName.set("impulse-lite")
     }
     test {
         useJUnitPlatform()
