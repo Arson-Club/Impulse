@@ -22,7 +22,7 @@ plugins {
     `dokka-convention`
     `java-library`
 }
-group = "club.arson"
+group = "club.arson.impulse"
 
 dokka {
     dokkaSourceSets.configureEach {}

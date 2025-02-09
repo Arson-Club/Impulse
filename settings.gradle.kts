@@ -44,7 +44,7 @@ sequenceOf(
     "app",
     "docker-broker",
 ).forEach {
-    val project = ":${rootProject.name}-$it"
-    include(project)
-    project(project).projectDir = file(it)
+    val p = ":$it"
+    include(p)
+    project(p).projectDir = file(it)
 }

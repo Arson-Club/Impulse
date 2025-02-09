@@ -33,7 +33,7 @@ dependencies {
         "app",
         "docker-broker",
     ).forEach {
-        dokka(project(":impulse-$it:"))
+        dokka(project(":$it:"))
     }
 }
 
@@ -62,7 +62,7 @@ subprojects {
             create<MavenPublication>("shadowJarPublication") {
                 artifact(tasks.named("shadowJar").get())
 
-                groupId = project.group.toString()
+                groupId = "club.arson.impulse"
                 artifactId = project.name
                 version = project.version.toString()
 
@@ -110,9 +110,9 @@ tasks.register<Jar>("combinedDistributionShadowJar") {
     archiveClassifier.set("")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    dependsOn(combinedDistributionProjects.map { ":impulse-${it}:shadowJar" })
+    dependsOn(combinedDistributionProjects.map { ":${it}:shadowJar" })
     from(combinedDistributionProjects.map { p ->
-        project(":impulse-${p}").tasks.named("shadowJar").map { (it as Jar).archiveFile.get().asFile }
+        project(p).tasks.named("shadowJar").map { (it as Jar).archiveFile.get().asFile }
     }.map { zipTree(it) })
 }
 
@@ -120,7 +120,7 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
-            groupId = project.group.toString()
+            groupId = "club.arson"
             artifactId = project.name
             version = project.version.toString()
 

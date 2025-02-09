@@ -25,15 +25,15 @@ plugins {
     `dokka-convention`
 }
 
-group = "club.arson"
+group = "club.arson.impulse"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.github.classgraph:classgraph:4.8.179")
     implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.20-Beta1")
-    implementation(project(":impulse-api"))
+    implementation(project(":api"))
 
-    testImplementation(project(":impulse-api"))
+    testImplementation(project(":api"))
     testImplementation(kotlin("test-junit5"))
     testImplementation("io.mockk:mockk:1.13.16")
     testImplementation("com.google.inject:guice:6.0.0")
