@@ -23,6 +23,7 @@ plugins {
     kotlin("kapt")
     kotlin("plugin.serialization") version "2.1.20-Beta2"
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("jacoco")
     `dokka-convention`
     `maven-publish`
 }
@@ -43,6 +44,7 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "com.github.johnrengelman.shadow")
     apply(plugin = "maven-publish")
+    apply(plugin = "jacoco")
 
     dependencies {
         compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
@@ -55,6 +57,32 @@ subprojects {
     val targetJavaVersion = 17
     kotlin {
         jvmToolchain(targetJavaVersion)
+    }
+
+    jacoco {
+        toolVersion = "0.8.12"
+    }
+
+    tasks.jacocoTestReport {
+        dependsOn(tasks.test)
+
+        reports {
+            xml.required.set(true)
+            html.required.set(false)
+        }
+    }
+
+    tasks.test {
+        useJUnitPlatform()
+
+        testLogging {
+            events("passed", "skipped", "failed")
+        }
+
+        reports {
+            junitXml.required.set(true)
+            html.required.set(false)
+        }
     }
 
     publishing {

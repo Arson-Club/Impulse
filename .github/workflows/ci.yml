@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Build with Gradle
+        run: ./gradlew build shadowJar combinedDistributionShadowJar
+
+      - name: Run tests
+        run: ./gradlew test jacocoTestReport
+
+      - name: Upload JaCoCo reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          file: '**/build/reports/jacoco/test/jacocoTestReport.xml'
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: Arson-Club/Impulse
+          flags: unittests
+
+      - name: Upload Test Reports
+        uses: codecov/test-results-action@v1
+        with:
+          file: '**/build/test-results/test/*.xml'
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: Arson-Club/Impulse
+          flags: unittests
