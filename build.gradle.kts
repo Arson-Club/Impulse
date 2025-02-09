@@ -45,11 +45,11 @@ subprojects {
     apply(plugin = "maven-publish")
 
     dependencies {
-        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-        kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+        compileOnly("com.velocitypowered:velocity-api:4.0.0-SNAPSHOT")
+        kapt("com.velocitypowered:velocity-api:4.0.0-SNAPSHOT")
 
         implementation("com.charleskorn.kaml:kaml:0.67.0")
-        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+        testImplementation("com.velocitypowered:velocity-api:4.0.0-SNAPSHOT")
     }
 
     val targetJavaVersion = 17
