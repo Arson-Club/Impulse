@@ -7,6 +7,9 @@ updates:
     commit-message:
       prefix: "fix"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "com.velocitypowered:velocity-api" # Ignore velocity so we can handle API updates
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "gradle"
     directory: "/api/"
     schedule:
@@ -14,6 +17,9 @@ updates:
     commit-message:
       prefix: "fix"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "com.velocitypowered:velocity-api" # Ignore velocity so we can handle API updates
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "gradle"
     directory: "/app/"
     schedule:
@@ -28,3 +34,6 @@ updates:
     commit-message:
       prefix: "fix"
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "com.velocitypowered:velocity-api" # Ignore velocity so we can handle API updates
+        update-types: ["version-update:semver-major"]
