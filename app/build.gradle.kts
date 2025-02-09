@@ -18,7 +18,7 @@
 
 plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.8"
+    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.10"
     id("eclipse")
     id("maven-publish")
 
