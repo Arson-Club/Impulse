@@ -19,7 +19,7 @@
 plugins {
     `kotlin-dsl`
     kotlin("jvm") version "2.1.20-Beta1"
-    kotlin("kapt") version "2.1.20-Beta1"
+    kotlin("kapt") version "2.1.20-Beta2"
 }
 
 dependencies {
