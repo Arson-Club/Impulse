@@ -92,10 +92,13 @@ class Impulse @Inject constructor(
         )
 
         ServiceRegistry.instance.configManager =
-            ServiceRegistry.instance.injector?.getInstance(ConfigManager::class.java)
+            ServiceRegistry.instance.injector!!.getInstance(ConfigManager::class.java)
         ServiceRegistry.instance.serverManager =
-            ServiceRegistry.instance.injector?.getInstance(ServerManager::class.java)
-        proxy.eventManager.register(this, PlayerLifecycleListener(logger))
+            ServiceRegistry.instance.injector!!.getInstance(ServerManager::class.java)
+        proxy.eventManager.register(
+            this,
+            ServiceRegistry.instance.injector!!.getInstance(PlayerLifecycleListener::class.java)
+        )
 
         // Register custom commands
         val commandManager = proxy.commandManager

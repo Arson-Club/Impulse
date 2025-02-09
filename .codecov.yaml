@@ -1,0 +1,20 @@
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"
+  individual_components:
+    - component_id: api
+      name: API
+      paths:
+        - api/**
+    - component_id: app
+      name: App
+      paths:
+        - app/**
+    - component_id: docker_broker
+      name: Docker Broker
+      paths:
+        - docker-broker/**

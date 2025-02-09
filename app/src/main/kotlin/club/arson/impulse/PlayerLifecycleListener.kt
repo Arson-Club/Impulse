@@ -23,9 +23,13 @@ import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
+import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
+import com.velocitypowered.api.proxy.Player
+import com.velocitypowered.api.proxy.server.RegisteredServer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
+import javax.inject.Inject
 
 /**
  * Listens for player lifecycle events and processes them
@@ -34,11 +38,79 @@ import org.slf4j.Logger
  * @param logger the logger to write messages to
  * @constructor creates a new PlayerLifecycleListener registered with an optional logger.
  */
-class PlayerLifecycleListener(private val logger: Logger? = null) {
+class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
     private fun getMM(message: String?): Component {
         return MiniMessage
             .miniMessage()
             .deserialize(message ?: "<red>Unknown error</red>")
+    }
+
+    /**
+     * Either drops the player or sends a message depending on if they are transferring or not
+     */
+    private fun handleTimeout(
+        player: Player,
+        previousServer: RegisteredServer?,
+        message: String? = null
+    ): ServerResult {
+        if (previousServer == null) {
+            player.disconnect(getMM(message))
+        } else {
+            player.sendMessage(getMM(message))
+        }
+
+        return ServerResult.denied()
+    }
+
+    fun handlePlayerConnectEvent(event: ServerPreConnectEvent) {
+        val server = ServiceRegistry.instance.serverManager?.getServer(event.originalServer.serverInfo.name)
+        if (server != null) {
+            val prevServer =
+                if (event.previousServer != null) ServiceRegistry.instance.serverManager?.getServer(event.previousServer!!.serverInfo.name) else null
+            var isRunning = server.isRunning()
+
+            // if the server is not running and auto start is enabled, start the server
+            if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
+                server.startServer().onSuccess {
+                    logger.trace("Server started successfully, allowing connection")
+                    isRunning = true
+                }.onFailure {
+                    logger.warn("Error: failed to start server, rejecting connection")
+                    logger.warn(it.message)
+                }
+            }
+
+            // If we are started, await ready and transfer the player
+            if (isRunning) {
+                server.awaitReady().onSuccess {
+                    logger.trace("Server reporting ready, transferring player")
+                    prevServer?.handleDisconnect(event.player.username)
+                }.onFailure {
+                    event.result = handleTimeout(
+                        event.player,
+                        event.previousServer,
+                        ServiceRegistry.instance.configManager?.messages?.startupError
+                    )
+                }
+            } else if (!server.config.lifecycleSettings.allowAutoStart) {
+                // If we are not started and auto start is disabled, reject the connection with the correct message
+                event.result = handleTimeout(
+                    event.player,
+                    event.previousServer,
+                    ServiceRegistry.instance.configManager?.messages?.autoStartDisabled
+                )
+            } else {
+                // Otherwise reject with an unknown error
+                event.result = handleTimeout(
+                    event.player,
+                    event.previousServer,
+                    ServiceRegistry.instance.configManager?.messages?.startupError
+                )
+            }
+        } else {
+            logger.debug("Server is not managed by us, taking no action")
+        }
+
     }
 
     /**
@@ -51,50 +123,9 @@ class PlayerLifecycleListener(private val logger: Logger? = null) {
      */
     @Subscribe(order = PostOrder.FIRST)
     fun onServerPreConnectEvent(event: ServerPreConnectEvent): EventTask {
-        logger?.debug("Handling ServerPreConnectEvent for ${event.player.username} from ${event.previousServer?.serverInfo?.name ?: "No Previous Server"} to ${event.originalServer.serverInfo.name}")
-        val prevServer = event.previousServer
+        logger.debug("Handling ServerPreConnectEvent for ${event.player.username} from ${event.previousServer?.serverInfo?.name ?: "No Previous Server"} to ${event.originalServer.serverInfo.name}")
         return EventTask.async {
-            val server = ServiceRegistry.instance.serverManager?.getServer(event.originalServer.serverInfo.name)
-            if (server != null) {
-                var isRunning = server.isRunning()
-
-                // if the server is not running and auto start is enabled, start the server
-                if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
-                    server.startServer().onSuccess {
-                        logger?.trace("Server started successfully, allowing connection")
-                        isRunning = true
-                    }.onFailure {
-                        logger?.warn("Error: failed to start server, rejecting connection")
-                        logger?.warn(it.message)
-                        event.result = ServerPreConnectEvent.ServerResult.denied()
-                        event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.startupError))
-                    }
-                }
-
-                // If we are started, await ready and transfer the player
-                if (isRunning) {
-                    server.awaitReady().onSuccess {
-                        logger?.trace("Server reporting ready, transferring player")
-                        if (prevServer != null) {
-                            ServiceRegistry.instance.serverManager?.getServer(prevServer.serverInfo.name)
-                                ?.handleDisconnect(event.player.username)
-                        }
-                    }.onFailure {
-                        event.result = ServerPreConnectEvent.ServerResult.denied()
-                        event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.startupError))
-                    }
-                } else if (!server.config.lifecycleSettings.allowAutoStart) {
-                    // If we are not started and auto start is disabled, reject the connection with the correct message
-                    event.result = ServerPreConnectEvent.ServerResult.denied()
-                    event.player.disconnect(getMM(ServiceRegistry.instance.configManager?.messages?.autoStartDisabled))
-                } else {
-                    // Otherwise reject with an unknown error
-                    event.result = ServerPreConnectEvent.ServerResult.denied()
-                    event.player.disconnect(getMM(null))
-                }
-            } else {
-                logger?.debug("Server is not managed by us, taking no action")
-            }
+            handlePlayerConnectEvent(event)
         }
     }
 
@@ -113,7 +144,7 @@ class PlayerLifecycleListener(private val logger: Logger? = null) {
             ServiceRegistry.instance.serverManager?.getServer(it.serverInfo.name)
                 ?.handleDisconnect(event.player.username)
         }.onFailure {
-            logger?.warn("unable to determine tha disconnect server for ${event.player.username}")
+            logger.warn("unable to determine tha disconnect server for ${event.player.username}")
         }
     }
 }

@@ -33,7 +33,7 @@ import javax.inject.Inject
 class ServerManager @Inject constructor(
     private val proxy: ProxyServer,
     private val plugin: Impulse,
-    private val logger: Logger? = null
+    private val logger: Logger
 ) {
     var servers = mutableMapOf<String, Server>()
     private var maintenanceInterval: Long
@@ -53,7 +53,7 @@ class ServerManager @Inject constructor(
     private fun serverMaintenance() {
         servers.values.forEach { server ->
             if (server.serverRef.playersConnected.isEmpty() && server.config.lifecycleSettings.allowAutoStop && !server.pinned) {
-                logger?.trace("Found empty server ${server.serverRef.serverInfo.name}")
+                logger.trace("Found empty server ${server.serverRef.serverInfo.name}")
                 server.scheduleShutdown()
             }
         }
@@ -72,7 +72,7 @@ class ServerManager @Inject constructor(
         toRemove.forEach {
             val server = servers[it]
             server?.removeServer()?.onFailure { error ->
-                logger?.error("Server $error failed to remove, it may be in an invalid state")
+                logger.error("Server $error failed to remove, it may be in an invalid state")
             }
             servers.remove(it)
         }
@@ -82,7 +82,7 @@ class ServerManager @Inject constructor(
             val serverInstance = allServerInstances.find { it.serverInfo.name == serverName }
             val config = newConfigs.find { it.name == serverName }
             if (serverInstance == null || config == null) {
-                logger?.warn("Server $serverName unable to be configured, missing instance or configuration")
+                logger.warn("Server $serverName unable to be configured, missing instance or configuration")
             } else {
                 val brokerFactory = ServiceRegistry.instance.getServerBroker()
                 brokerFactory.createFromConfig(config, logger)
@@ -90,7 +90,7 @@ class ServerManager @Inject constructor(
                         servers[serverName] = Server(it, serverInstance, config, proxy, plugin, logger)
                     }
                     .onFailure {
-                        logger?.error("ServerManager: server $serverName failed to create: ${it.message}")
+                        logger.error("ServerManager: server $serverName failed to create: ${it.message}")
                     }
             }
         }
@@ -99,13 +99,13 @@ class ServerManager @Inject constructor(
         toReconcile.forEach { serverName ->
             val newConfig = newConfigs.find { it.name == serverName }
             if (oldConfigs.find { it.name == serverName } == newConfig) {
-                logger?.trace("ServerManager: server $serverName configuration unchanged")
+                logger.trace("ServerManager: server $serverName configuration unchanged")
                 return@forEach
             }
             servers[serverName]?.reconcile(newConfig!!)?.onSuccess {
-                logger?.info("ServerManager: server $serverName reconciled")
+                logger.info("ServerManager: server $serverName reconciled")
             }?.onFailure {
-                logger?.error("ServerManager: server $serverName failed to reconcile: ${it.message}")
+                logger.error("ServerManager: server $serverName failed to reconcile: ${it.message}")
             }
         }
     }
@@ -113,9 +113,9 @@ class ServerManager @Inject constructor(
     @Subscribe
     fun onConfigReloadEvent(event: ConfigReloadEvent): EventTask {
         return EventTask.async {
-            logger?.debug("ServerManager: starting server configuration reload")
+            logger.debug("ServerManager: starting server configuration reload")
             if (!event.result.isAllowed) {
-                logger?.trace("ServerManager: configuration reload denied")
+                logger.trace("ServerManager: configuration reload denied")
                 return@async
             }
             reconcileServers(event.oldConfig.servers, event.config.servers)
@@ -127,7 +127,7 @@ class ServerManager @Inject constructor(
                     .repeat(maintenanceInterval, TimeUnit.SECONDS)
                     .schedule()
             }
-            logger?.info("ServerManager: server configuration reload complete")
+            logger.info("ServerManager: server configuration reload complete")
         }
     }
 }

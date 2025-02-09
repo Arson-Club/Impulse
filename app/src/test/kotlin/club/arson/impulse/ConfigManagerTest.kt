@@ -22,17 +22,14 @@ import club.arson.impulse.config.ConfigManager
 import club.arson.impulse.inject.modules.BaseModule
 import club.arson.impulse.inject.modules.BrokerModule
 import com.google.inject.Guice
-import com.velocitypowered.api.proxy.ProxyServer
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import java.nio.file.Path
 
 class ConfigManagerTest {
-    val plugin: Impulse = mockk()
-    val proxy: ProxyServer = mockk()
     val configPath: Path = mockk()
-    val injector = Guice.createInjector(BaseModule(plugin, proxy, configPath), BrokerModule())
+    val injector = Guice.createInjector(BaseModule(mockk(), mockk(), configPath, mockk()), BrokerModule())
     val configFile: Path = mockk()
     lateinit var configManager: ConfigManager
 

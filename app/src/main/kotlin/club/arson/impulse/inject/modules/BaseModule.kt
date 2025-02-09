@@ -35,7 +35,7 @@ class BaseModule(
     val plugin: Impulse,
     val proxyServer: ProxyServer,
     val pluginDirectory: Path,
-    val logger: Logger? = null
+    val logger: Logger,
 ) : AbstractModule() {
     @Provides
     fun providePlugin(): Impulse {
@@ -48,7 +48,7 @@ class BaseModule(
     }
 
     @Provides
-    fun provideLogger(): Logger? {
+    fun provideLogger(): Logger {
         return logger
     }
 

@@ -57,7 +57,7 @@ class ConfigManager @Inject constructor(
     private val proxy: ProxyServer,
     plugin: Impulse,
     @PluginDir private val configDirectory: Path,
-    private val logger: Logger?
+    private val logger: Logger
 ) {
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -89,9 +89,9 @@ class ConfigManager @Inject constructor(
                 StandardWatchEventKinds.ENTRY_CREATE
             )
         }.onFailure {
-            logger?.error("ConfigManager: Failed to register watcher: ${it.message}")
-            logger?.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
-            logger?.error("ConfigManager: Please correct this and restart the proxy!")
+            logger.error("ConfigManager: Failed to register watcher: ${it.message}")
+            logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory")
+            logger.error("ConfigManager: Please correct this and restart the proxy!")
         }.onSuccess {
             fireAndReload()
         }
@@ -134,7 +134,7 @@ class ConfigManager @Inject constructor(
         }
 
     private fun watchTask() {
-        logger?.trace("ConfigManager: Running watch task")
+        logger.trace("ConfigManager: Running watch task")
         var key: WatchKey?
         var gotUpdate = false
         while (watchService.poll().also { key = it } != null) {
@@ -220,7 +220,7 @@ class ConfigManager @Inject constructor(
                 getServerConfig(server)
                     .onSuccess { servers.add(it) }
                     .onFailure {
-                        logger?.error("ConfigManager: Failed to parse server config: ${it.message}")
+                        logger.error("ConfigManager: Failed to parse server config: ${it.message}")
                         configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                     }
             }
@@ -239,15 +239,15 @@ class ConfigManager @Inject constructor(
                     configEvent = ConfigReloadEvent(config, liveConfig, GenericResult.allowed())
                 }
                 .onFailure {
-                    logger?.error("ConfigManager: Failed to parse global config: ${it.message}")
+                    logger.error("ConfigManager: Failed to parse global config: ${it.message}")
                     configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
                 }
         }.onFailure {
             if (it is EmptyYamlDocumentException) {
-                logger?.warn("ConfigManager: Config file is empty, using default configuration")
-                logger?.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/")
+                logger.warn("ConfigManager: Config file is empty, using default configuration")
+                logger.warn("ConfigManager: For more information on setting up Impulse see our documentation: https://arson-club.github.io/Impulse/")
             } else {
-                logger?.error("ConfigManager: Failed to parse config file: ${it.message}")
+                logger.error("ConfigManager: Failed to parse config file: ${it.message}")
             }
             configEvent = ConfigReloadEvent(liveConfig, liveConfig, GenericResult.denied())
         }
@@ -255,9 +255,9 @@ class ConfigManager @Inject constructor(
         proxy.eventManager.fire(configEvent).thenAccept { event ->
             if (event.result.isAllowed) {
                 liveConfig = event.config
-                logger?.info("Configuration reloaded")
+                logger.info("Configuration reloaded")
             } else {
-                logger?.warn("Configuration failed to reload, keeping old config")
+                logger.warn("Configuration failed to reload, keeping old config")
             }
         }
     }
