@@ -50,7 +50,7 @@ subprojects {
         compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
         kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
 
-        implementation("com.charleskorn.kaml:kaml:0.67.0")
+        implementation("com.charleskorn.kaml:kaml:0.71.0")
         testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
     }
 
