@@ -20,7 +20,7 @@ package club.arson.impulse.inject.modules
 
 import club.arson.impulse.api.server.BrokerFactory
 import club.arson.impulse.inject.providers.BrokerConfigProvider
-import club.arson.impulse.inject.providers.BrokerProvider
+import club.arson.impulse.inject.providers.BrokerFactoryProvider
 import com.google.inject.AbstractModule
 import com.google.inject.Scopes
 import org.slf4j.Logger
@@ -38,7 +38,7 @@ class BrokerModule(private val logger: Logger? = null) : AbstractModule() {
      */
     override fun configure() {
         bind(object : com.google.inject.TypeLiteral<Set<BrokerFactory>>() {})
-            .toProvider(BrokerProvider(logger))
+            .toProvider(BrokerFactoryProvider(logger))
             .`in`(Scopes.SINGLETON)
         bind(object : com.google.inject.TypeLiteral<Map<String, KClass<out Any>>>() {})
             .toProvider(BrokerConfigProvider(logger))

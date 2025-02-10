@@ -25,7 +25,7 @@ Sources:
 ## Documentation
 
 For more detailed information on how to use Impulse, see our [documentation](https://arson-club.github.io/Impulse/).
-For API documentation, see out [KDocs]().
+For API documentation, see out [KDocs](https://arson-club.github.io/Impulse/kdocs/index.html).
 
 ## Quick Start
 

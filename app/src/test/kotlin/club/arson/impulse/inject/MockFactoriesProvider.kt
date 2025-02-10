@@ -27,7 +27,7 @@ class MockFactoriesProvider : Provider<Set<BrokerFactory>> {
     override fun get(): Set<BrokerFactory> {
         val mockFactory = mockk<BrokerFactory>()
         every { mockFactory.NAME } returns "test"
-        every { mockFactory.createFromConfig(any(), any()) } returns Result.success(mockk())
+        every { mockFactory.createFromConfig(any(), any()) } returns Result.success(mockk(relaxed = true))
         return setOf(mockFactory)
     }
 }

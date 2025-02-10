@@ -92,7 +92,6 @@ class PlayerLifecycleListenerTest {
     @Test
     fun testServerPreConnectEvent() {
         val event = mockk<ServerPreConnectEvent>()
-        val logger = mockk<Logger>(relaxed = true)
 
         every { event.player.username } returns "test"
         every { event.previousServer } returns null
@@ -230,7 +229,7 @@ class PlayerLifecycleListenerTest {
 
         val server = mockk<Server>()
         every { server.isRunning() } returns false
-        // Do this to force an unkown error
+        // Do this to force an unknown error
         every { server.config.lifecycleSettings.allowAutoStart } returnsMany listOf(false, true)
         every { server.awaitReady() } returns Result.failure(RuntimeException("Test"))
 

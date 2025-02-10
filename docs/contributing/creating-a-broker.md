@@ -29,7 +29,7 @@ repositories {
 
 The core component of a broker is its implementation of the `Broker` interface (`club.arson.impulse.api.server.Broker`).
 Here you will implement all the functions required for impulse to interact with the server software. For specifics on
-what each function does, refer to the KDocs.
+what each function does, refer to the [KDocs](https://arson-club.github.io/Impulse/kdocs/index.html).
 
 ## The Broker Configuration
 

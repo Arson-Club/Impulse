@@ -28,7 +28,7 @@ import org.slf4j.Logger
  *
  * @property logger the logger to use for messages
  */
-class BrokerProvider(private val logger: Logger? = null) :
+class BrokerFactoryProvider(private val logger: Logger? = null) :
     Provider<Set<BrokerFactory>> {
     /**
      * Scans the classpath for all implementations of [BrokerFactory]

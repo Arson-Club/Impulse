@@ -4,6 +4,5 @@ plugins {
 }
 
 dokka {
-    dokkaSourceSets.configureEach {
-    }
+    dokkaSourceSets.configureEach {}
 }

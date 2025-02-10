@@ -22,13 +22,15 @@ import club.arson.impulse.Impulse
 import club.arson.impulse.ServiceRegistry
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.events.ConfigReloadEvent
+import club.arson.impulse.api.server.Broker
+import club.arson.impulse.inject.modules.ServerModule
+import com.google.inject.Inject
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
 import org.slf4j.Logger
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 
 class ServerManager @Inject constructor(
     private val proxy: ProxyServer,
@@ -50,7 +52,7 @@ class ServerManager @Inject constructor(
             .schedule()
     }
 
-    private fun serverMaintenance() {
+    fun serverMaintenance() {
         servers.values.forEach { server ->
             if (server.serverRef.playersConnected.isEmpty() && server.config.lifecycleSettings.allowAutoStop && !server.pinned) {
                 logger.trace("Found empty server ${server.serverRef.serverInfo.name}")
@@ -63,35 +65,65 @@ class ServerManager @Inject constructor(
         return servers[name]
     }
 
+    private fun createServer(serverName: String, config: ServerConfig) {
+        val brokerFactory = ServiceRegistry.instance.getServerBroker()
+
+        brokerFactory.createFromConfig(config, logger)
+            .onSuccess { broker ->
+                registerServer(broker, serverName, config)
+            }
+            .onFailure { exception ->
+                logger.warn(
+                    "ServerManager: Unable to find valid broker for $serverName: ${exception.message}",
+                    exception
+                )
+            }
+    }
+
+    private fun registerServer(broker: Broker, serverName: String, config: ServerConfig) {
+        ServiceRegistry.instance.injector?.createChildInjector(ServerModule(proxy, config, broker, logger))
+            ?.let { injector ->
+                runCatching {
+                    servers[serverName] = injector.getInstance(Server::class.java)
+                }.fold(
+                    onSuccess = {
+                        logger.debug("ServerManager: Created server $serverName")
+                    },
+                    onFailure = {
+                        logger.warn("ServerManager: Failed to create server $serverName: ${it.message}")
+                    }
+                )
+            } ?: run {
+            logger.error("ServerManager: Failed to create child injector for server $serverName")
+            return
+        }
+    }
+
+    fun removeServer(serverName: String) {
+        servers[serverName]?.removeServer()?.onFailure { error ->
+            logger.error("Server $error failed to remove, it may be in an invalid state")
+        }
+
+        // Only remove the server record if it is dynamic
+        val velocityServer = proxy.getServer(serverName).orElse(null)
+        if (velocityServer != null && !proxy.configuration.servers.keys.contains(velocityServer.serverInfo.name)) {
+            proxy.unregisterServer(velocityServer.serverInfo)
+        }
+
+        servers.remove(serverName)
+    }
+
     private fun reconcileServers(oldConfigs: List<ServerConfig>, newConfigs: List<ServerConfig>) {
-        val oldServerNames = servers.keys
+        val oldServerNames = servers.keys.toSet()
         val newServerNames = newConfigs.map { it.name }
-        val allServerInstances = proxy.allServers
 
         val toRemove = oldServerNames - newServerNames.toSet()
-        toRemove.forEach {
-            val server = servers[it]
-            server?.removeServer()?.onFailure { error ->
-                logger.error("Server $error failed to remove, it may be in an invalid state")
-            }
-            servers.remove(it)
-        }
+        toRemove.forEach(::removeServer)
 
         val toAdd = newServerNames - oldServerNames
         toAdd.forEach { serverName ->
-            val serverInstance = allServerInstances.find { it.serverInfo.name == serverName }
-            val config = newConfigs.find { it.name == serverName }
-            if (serverInstance == null || config == null) {
-                logger.warn("Server $serverName unable to be configured, missing instance or configuration")
-            } else {
-                val brokerFactory = ServiceRegistry.instance.getServerBroker()
-                brokerFactory.createFromConfig(config, logger)
-                    .onSuccess {
-                        servers[serverName] = Server(it, serverInstance, config, proxy, plugin, logger)
-                    }
-                    .onFailure {
-                        logger.error("ServerManager: server $serverName failed to create: ${it.message}")
-                    }
+            newConfigs.find { it.name == serverName }?.let { config ->
+                createServer(serverName, config)
             }
         }
 
@@ -110,24 +142,28 @@ class ServerManager @Inject constructor(
         }
     }
 
+    fun handleConfigReloadEvent(event: ConfigReloadEvent) {
+        logger.debug("ServerManager: starting server configuration reload")
+        if (!event.result.isAllowed) {
+            logger.trace("ServerManager: configuration reload denied")
+            return
+        }
+        reconcileServers(event.oldConfig.servers, event.config.servers)
+        if (event.config.serverMaintenanceInterval != maintenanceInterval) {
+            maintenanceInterval = event.config.serverMaintenanceInterval
+            maintenanceTask.cancel()
+            maintenanceTask = proxy.scheduler
+                .buildTask(plugin, this::serverMaintenance)
+                .repeat(maintenanceInterval, TimeUnit.SECONDS)
+                .schedule()
+        }
+        logger.info("ServerManager: server configuration reload complete")
+    }
+
     @Subscribe
     fun onConfigReloadEvent(event: ConfigReloadEvent): EventTask {
         return EventTask.async {
-            logger.debug("ServerManager: starting server configuration reload")
-            if (!event.result.isAllowed) {
-                logger.trace("ServerManager: configuration reload denied")
-                return@async
-            }
-            reconcileServers(event.oldConfig.servers, event.config.servers)
-            if (event.config.serverMaintenanceInterval != maintenanceInterval) {
-                maintenanceInterval = event.config.serverMaintenanceInterval
-                maintenanceTask.cancel()
-                maintenanceTask = proxy.scheduler
-                    .buildTask(plugin, this::serverMaintenance)
-                    .repeat(maintenanceInterval, TimeUnit.SECONDS)
-                    .schedule()
-            }
-            logger.info("ServerManager: server configuration reload complete")
+            handleConfigReloadEvent(event)
         }
     }
 }

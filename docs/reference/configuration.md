@@ -5,7 +5,38 @@ Impulse exposes a lot of options so you can tweak its behavior to your liking. T
 its configutaion and apply the changes. This even extends to the server configurations! Impulse will trigger
 a [reconciliation](reconciliation.md) event for each server that has changed, keeping things up to date for you.
 
-## Configuration Options
+## Velocity Configuration
+
+Impulse has two methods of exposing servers to Velocity, either through a static binding or a dynamic binding. The
+difference between the two is outlined below. "Hot" reconciliation of binding is not supported but they can be refreshed
+live by removing the server from the impulse configuration, waiting for reconciliation to complete, and then re-adding
+the new server configuration.
+
+### Static Binding
+
+In this method you add your server configuration to the `velocity.toml` file as normal. Impulse will then adopt the
+server reference in Velocity when it creates the server. This method mostly exists due to current limitations in the
+Velocity API.
+
+**When to Use**:
+
+- You need to reference the server in the `try` block of Velocity's configuration
+- You need to reference the server in the `forced-hosts` section of Velocity's configuration
+- You want Velocity to always present the server in the server list, even if it is not in Impulse's configuration at all
+
+### Dynamic Binding
+
+If no server ref is found in the `velocity.toml` impulse will dynamically create one at runtime. Each broker will have
+its own method of specifying the server address, so please refer to the appropriate broker documentation for more
+information on how to configure this. For example with the Docker broker you would set the `address` key in its
+configuration.
+
+**When to Use**:
+
+- You do not need anything mentioned in [Static Binding](#Static-Binding)
+- Servers that will only be transferred to from another server (e.g. a mini games server only accessible from the lobby)
+
+## Impulse Configuration Options
 
 ### Global Configuration
 

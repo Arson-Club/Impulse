@@ -19,9 +19,12 @@
 package club.arson.impulse.api.server
 
 import club.arson.impulse.api.config.ServerConfig
+import java.net.InetSocketAddress
 
 interface Broker {
     fun getStatus(): Status
+
+    fun address(): Result<InetSocketAddress>
 
     fun isRunning(): Boolean
 

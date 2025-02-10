@@ -25,6 +25,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.command.InspectImageResponse
 import com.github.dockerjava.api.command.PullImageResultCallback
 import com.github.dockerjava.api.exception.NotFoundException
+import com.github.dockerjava.api.exception.NotModifiedException
 import com.github.dockerjava.api.model.*
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.core.DockerClientImpl
@@ -32,6 +33,7 @@ import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import kotlinx.coroutines.*
 import org.slf4j.Logger
 import java.lang.Runnable
+import java.net.InetSocketAddress
 import java.time.Duration
 
 /**
@@ -187,12 +189,20 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     }
 
     private fun stopContainer(): Result<Unit> {
-        try {
+        return runCatching {
             client.stopContainerCmd(name).exec()
-        } catch (e: Exception) {
-            return Result.failure(e)
-        }
-        return awaitContainerStop()
+        }.fold(
+            onSuccess = {
+                awaitContainerStop()
+            },
+            onFailure = { exception ->
+                when (exception) {
+                    is NotModifiedException -> Result.success(Unit) // Already stopped
+                    is NotFoundException -> Result.success(Unit) // Container does not exist
+                    else -> Result.failure(exception)
+                }
+            }
+        )
     }
 
     private fun awaitContainerStart(): Result<Unit> {
@@ -301,8 +311,29 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
         return stopContainer().onSuccess {
             runCatching { client.removeContainerCmd(name).exec() }
                 .onSuccess { return Result.success(Unit) }
-                .onFailure { return Result.failure(it) }
+                .onFailure { exception ->
+                    if (exception is NotFoundException) {
+                        return Result.success(Unit)
+                    }
+                    return Result.failure(exception)
+                }
         }.onFailure { return Result.failure(it) }
+    }
+
+    /**
+     * Gets the address of the server
+     *
+     * @return [Result] containing the server address or an error
+     */
+    override fun address(): Result<InetSocketAddress> {
+        return dockerConfig.address?.let { address ->
+            val (host, portStr) = address.split(":", limit = 2)
+            try {
+                Result.success(InetSocketAddress.createUnresolved(host, portStr.toInt()))
+            } catch (e: NumberFormatException) {
+                Result.failure(IllegalArgumentException("Invalid port number: $portStr", e))
+            }
+        } ?: Result.failure(IllegalArgumentException("Server address is not set"))
     }
 
     /**

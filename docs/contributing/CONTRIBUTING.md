@@ -16,4 +16,4 @@ AGPLv3). We do not require a CLA, so you retain the copyright to your contributi
 
 > [!TIP]
 > If you are looking to create a broker consider take a look at
-> our [Creating a Broker](./contributing/creating-a-broker.md) guide.
+> our [Creating a Broker](https://arson-club.github.io/Impulse/contributing/creating-a-broker.html) guide.

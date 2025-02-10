@@ -39,6 +39,7 @@
 
 # Other
 
-- [Contributing](contributing/contributing.md)
+- [KDocs](https://arson-club.github.io/Impulse/kdocs/index.html)
+- [Contributing](contributing/CONTRIBUTING.md)
     - [Creating a Broker](contributing/creating-a-broker.md)
 - [Licensing](./licensing.md)

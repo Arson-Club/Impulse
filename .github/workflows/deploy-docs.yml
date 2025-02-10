@@ -24,8 +24,18 @@ jobs:
       - name: Build Book
         run: |
           mdbook build
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Generate KDocs
+        run: ./gradlew dokkaGenerate
       - name: Setup Pages
         uses: actions/configure-pages@v4
+      - name: Combine KDocs and MDBook
+        run: |
+          cp -r build/dokka/html book/kdocs
       - name: Upload artifacts
         uses: actions/upload-pages-artifact@v3
         with:

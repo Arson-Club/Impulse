@@ -41,6 +41,7 @@ import kotlinx.serialization.encoding.Encoder
 @BrokerConfig("docker")
 @Serializable
 data class DockerServerConfig(
+    var address: String? = null,
     var image: String = "itzg/minecraft-server",
     var imagePullPolicy: ImagePullPolicy = IF_NOT_PRESENT,
     var autoStartOnCreate: Boolean = false,

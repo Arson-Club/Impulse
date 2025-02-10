@@ -24,7 +24,7 @@ import com.google.inject.Scopes
 import com.google.inject.TypeLiteral
 import kotlin.reflect.KClass
 
-class TestModule : AbstractModule() {
+class TestModule() : AbstractModule() {
     override fun configure() {
         bind(object : TypeLiteral<Set<BrokerFactory>>() {})
             .toProvider(MockFactoriesProvider::class.java)

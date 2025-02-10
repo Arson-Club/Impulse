@@ -24,6 +24,7 @@ import club.arson.impulse.api.config.ReconcileBehavior
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.config.ShutdownBehavior
 import club.arson.impulse.api.server.Broker
+import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.player.ServerPostConnectEvent
 import com.velocitypowered.api.proxy.ProxyServer
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit
  * @property logger an optional logger instance
  * @constructor creates a new server instance
  */
-class Server(
+class Server @Inject constructor(
     private val broker: Broker,
     val serverRef: RegisteredServer,
     var config: ServerConfig,
@@ -256,11 +257,10 @@ class Server(
     @Suppress("UnstableApiUsage")
     fun onPlayerJoin(event: ServerPostConnectEvent) {
         // Bail if the player is not connecting to this server
-        if (event.player.currentServer.get().serverInfo?.name != config.name) {
-            return
-        }
+        val currentServer = event.player.currentServer.orElse(null) ?: return
+        if (currentServer.serverInfo.name != config.name) return
 
-        if (pendingReconciliationTask != null) {
+        pendingReconciliationTask?.let {
             showReconciliationTitle(
                 event.player,
                 config.lifecycleSettings.timeouts.reconciliationGracePeriod

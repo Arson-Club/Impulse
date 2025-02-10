@@ -26,19 +26,22 @@ import net.kyori.adventure.text.Component
 
 fun createRemoveServerCommand(): LiteralArgumentBuilder<CommandSource> {
     return createGenericServerCommand("remove") { context, serverName ->
-        context.source.sendMessage(
-            Component.text("Removing $serverName")
-        )
-        val removeResult = ServiceRegistry.instance.serverManager?.getServer(serverName)?.removeServer()
-        if (removeResult == null || removeResult.isFailure) {
-            context.source.sendMessage(
-                Component.text("Error: failed to remove server $serverName")
-            )
-        } else {
-            context.source.sendMessage(
-                Component.text("Server $serverName removed successfully")
-            )
-        }
-        return@createGenericServerCommand Command.SINGLE_SUCCESS
+        context.source.sendMessage(Component.text("Removing server: $serverName"))
+
+        val serverManager = ServiceRegistry.instance.serverManager
+        val removeResult = serverManager?.getServer(serverName)?.removeServer()
+            ?: Result.failure(Throwable("Server manager not available"))
+
+        removeResult
+            .onSuccess {
+                context.source.sendMessage(Component.text("Server '$serverName' removed successfully"))
+            }
+            .onFailure { error ->
+                context.source.sendMessage(
+                    Component.text("Error: Failed to remove server '$serverName': ${error}")
+                )
+            }
+
+        Command.SINGLE_SUCCESS
     }
 }
