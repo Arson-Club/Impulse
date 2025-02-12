@@ -18,12 +18,11 @@ on which broker you choose, you may need to install additional software on your 
 
 ### Docker
 
-Currently Docker is the only broker implementation available. Any machine that you would like Impulse to manage backend
-servers must have docker installed. You can follow
-the [official docker installation guide](https://docs.docker.com/get-docker/) to install docker on your machine.
+Currently Docker is the only broker implementation available. Any computer you would like Impulse to run servers on via this
+broker must have docker installed. You can follow the
+[official docker installation guide](https://docs.docker.com/get-docker/).
 
-In this example, we will running our backend servers on the same machine as our proxy. If you run your proxy on a
-separate machine, docker is not required for that computer.
+In this example, are running our backend servers on the same machine as our proxy.
 
 > [!TIP]
 > For more information on the docker broker itself, see

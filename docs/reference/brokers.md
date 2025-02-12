@@ -9,8 +9,7 @@ not include any brokers.
 
 Impulse is capable of dynamically loading additional brokers at startup. To add a broker, place the jar in
 Impulse's data directory (normally `plugins/impulse`). Hot reloading is not currently supported. You will need to
-restart
-Velocity to update add a new broker or update an existing one.
+restart Velocity to update add a new broker or update an existing one.
 
 ## First Party Brokers
 
