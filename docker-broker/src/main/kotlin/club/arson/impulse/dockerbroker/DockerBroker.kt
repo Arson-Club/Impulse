@@ -31,10 +31,20 @@ import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.core.DockerClientImpl
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient
 import kotlinx.coroutines.*
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy
+import org.apache.http.ssl.SSLContexts
 import org.slf4j.Logger
+import java.io.FileNotFoundException
 import java.lang.Runnable
 import java.net.InetSocketAddress
+import java.security.KeyStore
+import java.security.KeyStoreException
+import java.security.UnrecoverableKeyException
 import java.time.Duration
+import javax.net.ssl.SSLContext
+import kotlin.io.path.Path
+import kotlin.io.path.exists
+import kotlin.io.path.inputStream
 
 /**
  * Implements a Docker based server broker for creating, updating, and removing servers.
@@ -51,14 +61,59 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     private lateinit var client: DockerClient
     private lateinit var dockerConfig: DockerServerConfig
     private lateinit var dockerHost: String
-    private var pullImageTask: Deferred<Result<Unit>>
+    private var pullImageTask: Deferred<Result<Unit>>? = null
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
         startupTimeout = serverConfig.lifecycleSettings.timeouts.startup
         stopTimeout = serverConfig.lifecycleSettings.timeouts.shutdown
         configureDockerClient(serverConfig)
-        pullImageTask = tryPullImageIfMissing(dockerConfig.image, scope)
+    }
+
+    class SSLHelper(private val dockerConfig: DockerServerConfig, private val logger: Logger? = null) {
+        fun getKeyStore(): Result<KeyStore> {
+            val ks = KeyStore.getInstance("PKCS12")
+            val keystorePw = dockerConfig.tlsConfig.keystorePassword?.toCharArray() ?: CharArray(0)
+            return runCatching {
+                val path = dockerConfig.tlsConfig.keystorePath?.let { Path(it) }
+
+                if (path?.exists() == true) {
+                    ks.load(path.inputStream(), keystorePw)
+                } else {
+                    throw FileNotFoundException("Could not find keystore at path: $path")
+                }
+            }.fold(
+                onFailure = { exception ->
+                    when (exception) {
+                        is FileNotFoundException -> logger?.error("Keystore file not found: ${exception.message}")
+                        is KeyStoreException -> logger?.error("Failed to load keystore, make sure it is PKCS12: ${exception.message}")
+                        is UnrecoverableKeyException -> logger?.error("Failed to load keystore, make sure the password is correct: ${exception.message}")
+                        else -> logger?.error("Failed to load keystore with unknown error: ${exception.message}")
+                    }
+                    Result.failure(exception)
+                },
+                onSuccess = { Result.success(ks) }
+            )
+        }
+
+        fun getSSLContext(): SSLContext {
+            val tlsConfig = dockerConfig.tlsConfig
+
+            if (!tlsConfig.enabled) {
+                return SSLContexts.createDefault()
+            }
+
+            val keyStore = getKeyStore().getOrThrow()
+
+            val keyPass = tlsConfig.clientKeyPassword?.toCharArray()
+                ?: tlsConfig.keystorePassword?.toCharArray()
+                ?: CharArray(0)
+
+            return SSLContexts.custom()
+                .loadKeyMaterial(keyStore, keyPass)
+                .loadTrustMaterial(keyStore, TrustSelfSignedStrategy())
+                .build()
+        }
     }
 
     private fun configureDockerClient(config: ServerConfig) {
@@ -69,21 +124,31 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
         }
         this.dockerConfig = dockerConfig
         dockerHost = dockerConfig.hostPath
-        val clientConfig = DefaultDockerClientConfig
+        val clientConfigBuilder = DefaultDockerClientConfig
             .createDefaultConfigBuilder()
             .withDockerHost(dockerHost)
-            .build()
+            .withCustomSslConfig { SSLHelper(dockerConfig, logger).getSSLContext() }
+
+        if (dockerConfig.tlsConfig.enabled) {
+            clientConfigBuilder
+                .withDockerTlsVerify(dockerConfig.tlsConfig.tlsVerify)
+        }
+        val clientConfig = clientConfigBuilder.build()
 
         val httpClient = ApacheDockerHttpClient.Builder()
+            .sslConfig(clientConfig.sslConfig)
             .dockerHost(clientConfig.dockerHost)
             .maxConnections(100)
             .connectionTimeout(Duration.ofSeconds(30))
             .responseTimeout(Duration.ofSeconds(45))
             .build()
-
         client = DockerClientImpl.getInstance(clientConfig, httpClient)
         startupTimeout = config.lifecycleSettings.timeouts.startup
         stopTimeout = config.lifecycleSettings.timeouts.shutdown
+        if (pullImageTask != null) {
+            pullImageTask?.cancel()
+        }
+        pullImageTask = tryPullImageIfMissing(dockerConfig.image, scope)
     }
 
     private fun tryPullImageIfMissing(image: String, scope: CoroutineScope): Deferred<Result<Unit>> {
@@ -110,7 +175,7 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
     private fun pullImageIfNotPresent(taggedImage: String): Result<Unit> {
         val inspectionResult = inspectImage(taggedImage)
         return if (inspectionResult.isSuccess) {
-            logger?.info("Docker Broker: image $taggedImage exists")
+            logger?.debug("Docker Broker: image $taggedImage exists")
             Result.success(Unit)
         } else {
             logger?.info("Docker Broker: image $taggedImage does not exist, pulling (This may take a while)...")
@@ -146,8 +211,10 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
 
     private fun createContainer(autoStart: Boolean = dockerConfig.autoStartOnCreate): Result<Unit> {
         // Pull the image if it is missing
-        runBlocking { pullImageTask.await() }
-            .onFailure { return Result.failure(it) }
+        if (pullImageTask != null) {
+            runBlocking { pullImageTask!!.await() }
+                .onFailure { return Result.failure(it) }
+        }
 
         // Create the container
         val binds = ArrayList<Bind>()
@@ -355,7 +422,9 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
         runCatching { client.inspectContainerCmd(name).exec() }
             .onSuccess { inspection ->
                 val dockerConfig = config.config as? DockerServerConfig
+
                 val hostChanged = dockerConfig?.hostPath != dockerHost
+                val tlsConfigChanged = dockerConfig?.tlsConfig != this.dockerConfig.tlsConfig
                 val imageChanged = inspection.config.image != dockerConfig?.image
                 val pullPolicyChanged = this.dockerConfig.imagePullPolicy != dockerConfig?.imagePullPolicy
 
@@ -378,26 +447,17 @@ class DockerBroker(serverConfig: ServerConfig, private val logger: Logger? = nul
                         val (hostPath, mount) = it.split(":")
                         Pair(hostPath, mount)
                     } ?: emptyList())
-                if (imageChanged && dockerConfig?.image != null) {
-                    pullImageTask = tryPullImageIfMissing(dockerConfig.image, scope)
-                }
-                if (imageChanged || portsChanged || volumesChanged || hostChanged || envChanged) {
+                if (imageChanged || pullPolicyChanged || portsChanged || volumesChanged || hostChanged || tlsConfigChanged || envChanged) {
                     response = Result.success(Runnable {
                         removeServer()
                         configureDockerClient(config)
                         stopTimeout = config.lifecycleSettings.timeouts.shutdown
                         startupTimeout = config.lifecycleSettings.timeouts.startup
-                        if (pullPolicyChanged) {
-                            pullImageTask = tryPullImageIfMissing(dockerConfig!!.image, scope)
-                        }
                         createContainer(inspection.state.status == "running")
                     })
                 } else {
                     response = Result.success(Runnable {
                         this.dockerConfig = config.config as DockerServerConfig
-                        if (pullPolicyChanged) {
-                            pullImageTask = tryPullImageIfMissing(dockerConfig!!.image, scope)
-                        }
                     })
                 }
             }

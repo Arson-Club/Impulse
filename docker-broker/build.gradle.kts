@@ -29,7 +29,7 @@ dokka {
 }
 
 dependencies {
-    implementation("com.github.docker-java:docker-java-core:3.4.1")
+    implementation("com.github.docker-java:docker-java:3.4.1")
     implementation("com.github.docker-java:docker-java-transport-httpclient5:3.4.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
     implementation(project(":api"))

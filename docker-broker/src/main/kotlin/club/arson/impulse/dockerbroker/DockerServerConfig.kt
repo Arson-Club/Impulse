@@ -47,8 +47,27 @@ data class DockerServerConfig(
     var autoStartOnCreate: Boolean = false,
     var portBindings: List<String> = listOf("25565:25565"),
     var hostPath: String = "unix:///var/run/docker.sock",
+    var tlsConfig: DockerTlsConfig = DockerTlsConfig(),
     var volumes: List<String> = emptyList(),
     var env: Map<String, String> = mapOf("ONLINE_MODE" to "false"),
+)
+
+/**
+ * TLS configuration for the Docker connection
+ *
+ * @property enabled Whether TLS is enabled or not
+ * @property tlsVerify Whether to verify the server's certificate
+ * @property clientKeyPassword Password for the client key (if different from the keystore password)
+ * @property keystorePath Path to the java PKCS12 keystore holding the client key, client cert, and CA cert
+ * @property keystorePassword Password for the keystore
+ */
+@Serializable
+data class DockerTlsConfig(
+    var enabled: Boolean = false,
+    var tlsVerify: Boolean = true,
+    var clientKeyPassword: String? = null,
+    var keystorePath: String? = null,
+    var keystorePassword: String? = null
 )
 
 /**

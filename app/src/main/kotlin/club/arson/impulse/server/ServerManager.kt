@@ -65,19 +65,20 @@ class ServerManager @Inject constructor(
         return servers[name]
     }
 
-    private fun createServer(serverName: String, config: ServerConfig) {
+    private fun createServer(serverName: String, config: ServerConfig): Result<Unit> {
         val brokerFactory = ServiceRegistry.instance.getServerBroker()
 
-        brokerFactory.createFromConfig(config, logger)
-            .onSuccess { broker ->
-                registerServer(broker, serverName, config)
-            }
-            .onFailure { exception ->
-                logger.warn(
-                    "ServerManager: Unable to find valid broker for $serverName: ${exception.message}",
-                    exception
-                )
-            }
+        return runCatching {
+            brokerFactory.createFromConfig(config, logger)
+                .onSuccess { broker ->
+                    registerServer(broker, serverName, config)
+                }
+                .onFailure { exception ->
+                    logger.warn(
+                        "ServerManager: Unable to find valid broker for $serverName: ${exception.message}"
+                    )
+                }
+        }
     }
 
     private fun registerServer(broker: Broker, serverName: String, config: ServerConfig) {
@@ -123,7 +124,11 @@ class ServerManager @Inject constructor(
         val toAdd = newServerNames - oldServerNames
         toAdd.forEach { serverName ->
             newConfigs.find { it.name == serverName }?.let { config ->
-                createServer(serverName, config)
+                createServer(serverName, config).onSuccess {
+                    logger.info("ServerManager: server $serverName added")
+                }.onFailure {
+                    logger.error("ServerManager: server $serverName failed to add: ${it.message}")
+                }
             }
         }
 
