@@ -51,15 +51,20 @@ class ServerManagerTest {
         registeredServer: RegisteredServer? = mockk<RegisteredServer>(relaxed = true),
         server: Server = mockk(relaxed = true),
         broker: Result<Broker> = Result.success(mockk(relaxed = true)),
-        childInjector: Injector? = null
+        childInjector: Injector? = null,
+        serverBroker: ServerBroker = mockk<ServerBroker>(relaxed = true).apply {
+            every {
+                createFromConfig(
+                    any(),
+                    any()
+                )
+            } returns broker
+        },
     ): ServerManager {
         every { proxyServer.getServer(any()) } returns Optional.ofNullable(registeredServer)
         val injector = Guice.createInjector(
             BaseModule(impulse, proxyServer, mockk(relaxed = true), logger),
         )
-
-        val serverBroker = mockk<ServerBroker>(relaxed = true)
-        every { serverBroker.createFromConfig(any(), any()) } returns broker
 
         val ci: Injector = childInjector ?: mockk<Injector>().apply {
             every { getInstance(Server::class.java) } returns server
@@ -184,6 +189,28 @@ class ServerManagerTest {
         serverManager.handleConfigReloadEvent(event)
         assertEquals(listOf(), serverManager.servers.keys.toList())
         verify(exactly = 1) { injector.getInstance(Server::class.java) }
+    }
+
+    @Test
+    fun testReconcileAddServerBrokerFactoryException() {
+        val injector = mockk<Injector>().apply {
+            every { getInstance(Server::class.java) } throws RuntimeException("test")
+        }
+        val serverBroker = mockk<ServerBroker>(relaxed = true).apply {
+            every { createFromConfig(any(), any()) } throws RuntimeException("test")
+        }
+        val serverManager = getServerManager(serverBroker = serverBroker)
+
+        val serverConfig = mockk<ServerConfig>(relaxed = true).apply {
+            every { name } returns "test"
+            every { type } returns "test"
+        }
+
+        val event = createEvent(newServers = listOf(serverConfig))
+
+        serverManager.handleConfigReloadEvent(event)
+        assertEquals(listOf(), serverManager.servers.keys.toList())
+        verify(exactly = 0) { injector.getInstance(Server::class.java) }
     }
 
     @Test
