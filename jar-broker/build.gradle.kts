@@ -16,36 +16,26 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UnstableApiUsage")
+plugins {
+    kotlin("jvm")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 
-rootProject.name = "impulse"
+    `dokka-convention`
+}
+group = "club.arson.impulse"
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+dokka {
+    dokkaSourceSets.configureEach {}
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") {
-            name = "papermc-repo"
-        }
-        maven("https://oss.sonatype.org/content/groups/public/") {
-            name = "sonatype"
-        }
-    }
+dependencies {
+    implementation(project(":api"))
 }
 
-sequenceOf(
-    "api",
-    "app",
-    "docker-broker",
-    "jar-broker",
-).forEach {
-    val p = ":$it"
-    include(p)
-    project(p).projectDir = file(it)
+tasks {
+    shadowJar {
+        manifest {}
+        from(sourceSets.main.get().output)
+        archiveClassifier.set("")
+    }
 }

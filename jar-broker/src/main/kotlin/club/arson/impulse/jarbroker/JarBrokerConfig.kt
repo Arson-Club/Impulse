@@ -16,36 +16,18 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UnstableApiUsage")
+package club.arson.impulse.jarbroker
 
-rootProject.name = "impulse"
+import club.arson.impulse.api.config.BrokerConfig
+import kotlinx.serialization.Serializable
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") {
-            name = "papermc-repo"
-        }
-        maven("https://oss.sonatype.org/content/groups/public/") {
-            name = "sonatype"
-        }
-    }
-}
-
-sequenceOf(
-    "api",
-    "app",
-    "docker-broker",
-    "jar-broker",
-).forEach {
-    val p = ":$it"
-    include(p)
-    project(p).projectDir = file(it)
-}
+@BrokerConfig("jar")
+@Serializable
+data class JarBrokerConfig(
+    var jarFile: String,
+    var workingDirectory: String,
+    var command: String = "java",
+    var address: String? = null,
+    var javaFlags: List<String> = emptyList(),
+    var flags: List<String> = emptyList()
+)

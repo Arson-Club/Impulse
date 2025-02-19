@@ -221,7 +221,7 @@ class Server @Inject constructor(
         val timeout = config.lifecycleSettings.timeouts.startup * 1000
         var isReady = false
 
-        while (!isReady && System.currentTimeMillis() - startTime < timeout) {
+        while (!isReady && isRunning() && System.currentTimeMillis() - startTime < timeout) {
             try {
                 serverRef.ping().get()
                 isReady = true
