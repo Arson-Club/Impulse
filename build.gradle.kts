@@ -21,7 +21,7 @@ group = "club.arson"
 plugins {
     kotlin("jvm")
     kotlin("kapt")
-    kotlin("plugin.serialization") version "2.1.20-Beta2"
+    kotlin("plugin.serialization") version "2.1.20-RC"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("jacoco")
     `dokka-convention`
