@@ -30,7 +30,7 @@ group = "club.arson.impulse"
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.github.classgraph:classgraph:4.8.179")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.20-Beta2")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.20-RC")
     implementation(project(":api"))
 
     testImplementation(project(":api"))
