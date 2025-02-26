@@ -46,7 +46,7 @@ class ServerBroker @Inject constructor(
      * @return a result containing the broker or an error
      */
     fun createFromConfig(config: ServerConfig, logger: Logger? = null): Result<Broker> {
-        val brokerFactory = brokers.find { it.NAME == config.type }
+        val brokerFactory = brokers.find { it.provides.contains(config.type) }
         if (brokerFactory == null) {
             return Result.failure(IllegalArgumentException("Invalid broker type: ${config.type}"))
         }

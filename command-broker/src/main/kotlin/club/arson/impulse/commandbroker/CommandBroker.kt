@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.jarbroker
+package club.arson.impulse.commandbroker
 
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.server.Broker
@@ -25,28 +25,20 @@ import org.slf4j.Logger
 import java.io.File
 import java.net.InetSocketAddress
 
-class JarBroker(serverConfig: ServerConfig, private val logger: Logger? = null) : Broker {
-    var jarConfig: JarBrokerConfig
-    var process: Process? = null
+class CommandBroker(serverConfig: ServerConfig, private val logger: Logger? = null) : Broker {
+    private var commandConfig: CommandBrokerConfig
+    private var process: Process? = null
 
     init {
-        jarConfig = serverConfig.config as JarBrokerConfig
-    }
-
-    private fun getJarCommand(): List<String> {
-        return mutableListOf(
-            jarConfig.command,
-            *jarConfig.javaFlags.toTypedArray(),
-            "-jar", jarConfig.jarFile,
-            *jarConfig.flags.toTypedArray()
-        )
+        commandConfig = serverConfig.config as CommandBrokerConfig
     }
 
     override fun address(): Result<InetSocketAddress> {
-        if (jarConfig.address == null) {
+        if (commandConfig.address == null) {
             return Result.failure(IllegalArgumentException("No address specified in config"))
         }
-        return runCatching { InetSocketAddress(jarConfig.address, 25565) }
+        val port = commandConfig.address?.split(":")?.getOrNull(1)?.toIntOrNull() ?: 25565
+        return runCatching { InetSocketAddress(commandConfig.address, port) }
     }
 
     override fun isRunning(): Boolean {
@@ -64,11 +56,11 @@ class JarBroker(serverConfig: ServerConfig, private val logger: Logger? = null) 
     override fun startServer(): Result<Unit> {
         if (!isRunning()) {
             return runCatching {
-                val commands = getJarCommand()
+                val commands = commandConfig.command
                 logger?.debug("Starting server with command: ${commands.joinToString(" ")}")
                 process = ProcessBuilder()
                     .command(commands)
-                    .directory(File(jarConfig.workingDirectory))
+                    .directory(File(commandConfig.workingDirectory))
                     .start()
             }
         }
@@ -84,25 +76,25 @@ class JarBroker(serverConfig: ServerConfig, private val logger: Logger? = null) 
     }
 
     override fun removeServer(): Result<Unit> {
-        // For the jar broker there is no real difference between stopping and removing the server
+        // For the command broker there is no real difference between stopping and removing the server
         return stopServer()
     }
 
     override fun reconcile(config: ServerConfig): Result<Runnable?> {
-        if (config.type != "jar") {
-            return Result.failure(IllegalArgumentException("Expected JarServerConfig and got something else!"))
+        if (config.type != "cmd") {
+            return Result.failure(IllegalArgumentException("Expected CommandBrokerConfig and got something else!"))
         }
 
-        val newConfig = config.config as JarBrokerConfig
-        if (newConfig != jarConfig) {
-            return Result.success(Runnable {
+        val newConfig = config.config as CommandBrokerConfig
+        return if (newConfig != commandConfig) {
+            Result.success(Runnable {
                 stopServer()
-                jarConfig = newConfig
+                commandConfig = newConfig
                 startServer()
             })
         } else {
-            return Result.success(Runnable {
-                jarConfig = newConfig
+            Result.success(Runnable {
+                commandConfig = newConfig
             })
         }
     }

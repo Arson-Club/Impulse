@@ -33,7 +33,7 @@ dependencies {
         "api",
         "app",
         "docker-broker",
-        "jar-broker",
+        "command-broker",
     ).forEach {
         dokka(project(":$it:"))
     }
@@ -130,7 +130,7 @@ subprojects {
 val combinedDistributionProjects = listOf(
     "app",
     "docker-broker",
-    "jar-broker",
+    "command-broker",
 )
 
 tasks.register<Jar>("combinedDistributionShadowJar") {

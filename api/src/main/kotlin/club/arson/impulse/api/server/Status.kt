@@ -18,6 +18,14 @@
 
 package club.arson.impulse.api.server
 
+/**
+ * Represents the status of a server
+ *
+ * @property RUNNING The server is running
+ * @property STOPPED The server is stopped
+ * @property REMOVED The server is removed
+ * @property UNKNOWN The server status is unknown
+ */
 enum class Status {
     RUNNING,
     STOPPED,

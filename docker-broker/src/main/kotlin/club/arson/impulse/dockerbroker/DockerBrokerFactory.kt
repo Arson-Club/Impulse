@@ -28,9 +28,9 @@ import org.slf4j.Logger
  */
 class DockerBrokerFactory : BrokerFactory {
     /**
-     * The name for our broker and associated config class
+     * List of broker types that this factory provides
      */
-    override val NAME = "docker"
+    override val provides = listOf("docker")
 
     /**
      * Create a docker broker from a ServerConfig Object

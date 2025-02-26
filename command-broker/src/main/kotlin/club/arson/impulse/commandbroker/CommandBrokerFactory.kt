@@ -1,4 +1,4 @@
-package club.arson.impulse.jarbroker
+package club.arson.impulse.commandbroker
 
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.server.Broker
@@ -8,11 +8,11 @@ import org.slf4j.Logger
 /**
  * Factory interface used to dynamically register and create jar brokers
  */
-class JarBrokerFactory : BrokerFactory {
+class CommandBrokerFactory : BrokerFactory {
     /**
      * This broker is designed to run raw jar files on the server
      */
-    override val NAME = "jar"
+    override val provides: List<String> = listOf("jar", "cmd")
 
     /**
      * Create a jar broker from a ServerConfig Object
@@ -23,8 +23,10 @@ class JarBrokerFactory : BrokerFactory {
      * @return A result containing a jar broker if we were able to create one for the server, else an error
      */
     override fun createFromConfig(config: ServerConfig, logger: Logger?): Result<Broker> {
-        return (config.config as? JarBrokerConfig)?.let { conf ->
-            Result.success(JarBroker(config, logger))
-        } ?: Result.failure(IllegalArgumentException("Invalid configuration for jar broker!!!"))
+        return when (config.config) {
+            is JarBrokerConfig -> Result.success(JarBroker(config, logger))
+            is CommandBrokerConfig -> Result.success(CommandBroker(config, logger))
+            else -> Result.failure(IllegalArgumentException("Invalid configuration for command/jar broker"))
+        }
     }
 }

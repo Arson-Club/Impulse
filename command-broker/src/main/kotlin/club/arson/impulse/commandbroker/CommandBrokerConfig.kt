@@ -16,18 +16,15 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package club.arson.impulse.jarbroker
+package club.arson.impulse.commandbroker
 
 import club.arson.impulse.api.config.BrokerConfig
 import kotlinx.serialization.Serializable
 
-@BrokerConfig("jar")
+@BrokerConfig("cmd")
 @Serializable
-data class JarBrokerConfig(
-    var jarFile: String,
+data class CommandBrokerConfig(
     var workingDirectory: String,
-    var command: String = "java",
+    var command: List<String>,
     var address: String? = null,
-    var javaFlags: List<String> = emptyList(),
-    var flags: List<String> = emptyList()
 )

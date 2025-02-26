@@ -144,7 +144,7 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
             ServiceRegistry.instance.serverManager?.getServer(it.serverInfo.name)
                 ?.handleDisconnect(event.player.username)
         }.onFailure {
-            logger.warn("unable to determine tha disconnect server for ${event.player.username}")
+            logger.debug("unable to determine tha disconnect server for ${event.player.username}")
         }
     }
 }

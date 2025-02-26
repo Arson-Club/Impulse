@@ -21,7 +21,21 @@ package club.arson.impulse.api.server
 import club.arson.impulse.api.config.ServerConfig
 import org.slf4j.Logger
 
+/**
+ * API used to implemnt a broker factory. This is used to create brokers from a configuration.
+ */
 interface BrokerFactory {
-    val NAME: String
+    /**
+     * A list of the broker types this factory can create
+     */
+    val provides: List<String>
+
+    /**
+     * Create a broker from a configuration
+     *
+     * @param config The [ServerConfig] used to create the broker from
+     * @param logger An optional logger to use for messages in the broker
+     * @return A [Result] containing the created broker or an error
+     */
     fun createFromConfig(config: ServerConfig, logger: Logger? = null): Result<Broker>
 }
