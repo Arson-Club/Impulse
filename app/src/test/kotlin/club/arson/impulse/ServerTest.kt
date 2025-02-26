@@ -177,14 +177,37 @@ class ServerTest {
         val config = mockk<ServerConfig>()
         every { config.lifecycleSettings.timeouts.startup } returns 1
 
-        val serverRef = mockk<RegisteredServer>()
-        val future = mockk<CompletableFuture<ServerPing>>()
-        every { future.get() } throwsMany listOf(RuntimeException("Test")) andThen (mockk<ServerPing>())
-        every { serverRef.ping() } returns future
+        val future = mockk<CompletableFuture<ServerPing>>().apply {
+            every { get() } throwsMany listOf(RuntimeException("Test")) andThen (mockk<ServerPing>())
+        }
+        val serverRef = mockk<RegisteredServer>().apply {
+            every { ping() } returns future
+        }
+        val broker = mockk<Broker>().apply {
+            every { isRunning() } returns true
+        }
 
-        val server = getServer(registeredServer = serverRef, config = config)
+        val server = getServer(registeredServer = serverRef, config = config, broker = broker)
         assertTrue { server.awaitReady().isSuccess }
         verify(exactly = 2) { serverRef.ping() }
+    }
+
+    @Test
+    fun testAwaitReadyServerCrashes() {
+        val config = mockk<ServerConfig>().apply {
+            every { lifecycleSettings.timeouts.startup } returns 1
+        }
+        val serverRef = mockk<RegisteredServer>().apply {
+            every { ping() } throws RuntimeException("Test")
+            every { serverInfo } returns mockk(relaxed = true)
+        }
+        val broker = mockk<Broker>().apply {
+            every { isRunning() } returnsMany listOf(true, false)
+        }
+
+        val server = getServer(registeredServer = serverRef, config = config, broker = broker)
+        assertTrue { server.awaitReady().isFailure }
+        verify(exactly = 1) { serverRef.ping() }
     }
 
     @Test

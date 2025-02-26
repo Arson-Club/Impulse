@@ -86,7 +86,7 @@ class PlayerLifecycleListenerTest {
 
         // Run with internal throw getting connection
         playerLifecycleListener.onDisconnectEvent(event)
-        verify(exactly = 1) { logger.warn(any()) }
+        verify(exactly = 1) { logger.debug(any()) }
     }
 
     @Test
