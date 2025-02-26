@@ -18,7 +18,7 @@ component_management:
       name: Docker Broker
       paths:
         - docker-broker/**
-    - component_id: jar_broker
-      name: Jar Broker
+    - component_id: command_broker
+      name: Command Broker
       paths:
-        - jar-broker/**
+        - command-broker/**

@@ -128,9 +128,10 @@ subprojects {
 }
 
 val combinedDistributionProjects = listOf(
-    "app",
-    "docker-broker",
-    "command-broker",
+    Pair("api", "jar"),
+    Pair("app", "shadowJar"),
+    Pair("docker-broker", "shadowJar"),
+    Pair("command-broker", "jar"),
 )
 
 tasks.register<Jar>("combinedDistributionShadowJar") {
@@ -140,9 +141,9 @@ tasks.register<Jar>("combinedDistributionShadowJar") {
     archiveClassifier.set("")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-    dependsOn(combinedDistributionProjects.map { ":${it}:shadowJar" })
+    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
     from(combinedDistributionProjects.map { p ->
-        project(p).tasks.named("shadowJar").map { (it as Jar).archiveFile.get().asFile }
+        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
     }.map { zipTree(it) })
 }
 

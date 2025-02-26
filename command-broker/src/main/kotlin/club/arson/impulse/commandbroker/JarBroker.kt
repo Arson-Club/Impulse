@@ -51,7 +51,6 @@ class JarBroker(serverConfig: ServerConfig, logger: Logger? = null) : Broker {
             return Result.failure(IllegalArgumentException("Expected JarBrokerConfig and got something else!"))
         }
 
-        // Convert to config to the base type
         val cmdConfig = toCommandBrokerConfig(config.config as JarBrokerConfig)
         config.config = cmdConfig
         config.type = "cmd"
