@@ -26,6 +26,7 @@ import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.events.ConfigReloadEvent
 import club.arson.impulse.inject.modules.PluginDir
 import com.charleskorn.kaml.*
+import com.google.inject.Inject
 import com.velocitypowered.api.event.ResultedEvent.GenericResult
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.scheduler.ScheduledTask
@@ -36,8 +37,9 @@ import org.slf4j.Logger
 import java.io.IOException
 import java.nio.file.*
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import kotlin.io.path.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.inputStream
+import kotlin.io.path.name
 import kotlin.reflect.KClass
 
 /**
@@ -55,7 +57,8 @@ class ConfigManager @Inject constructor(
     private val proxy: ProxyServer,
     plugin: Impulse,
     @PluginDir private val configDirectory: Path,
-    private val logger: Logger
+    private val logger: Logger,
+    reloadOnInit: Boolean = true
 ) {
     private val watchTask: ScheduledTask
     private val watchService: WatchService = FileSystems.getDefault().newWatchService()
@@ -79,9 +82,6 @@ class ConfigManager @Inject constructor(
         watchTask = proxy.scheduler.buildTask(plugin, this::watchTask).repeat(5, TimeUnit.SECONDS).schedule()
         createDefaultConfigFileIfMissing()
         runCatching {
-            if (!configDirectory.exists()) {
-                configDirectory.createDirectories()
-            }
             configDirectory.register(
                 watchService,
                 StandardWatchEventKinds.ENTRY_MODIFY,
@@ -92,17 +92,31 @@ class ConfigManager @Inject constructor(
             logger.error("ConfigManager: This probably means that we do not have permission to create or read the config directory ($configDirectory)")
             logger.error("ConfigManager: Please correct this and restart the proxy!")
         }.onSuccess {
-            fireAndReload()
+            if (reloadOnInit) {
+                fireAndReload()
+            }
         }
     }
 
     private fun createDefaultConfigFileIfMissing() {
+        try {
+            // toFile to work around mocking issues with the Path API
+            if (!configDirectory.toFile().exists()) {
+                configDirectory.createDirectories()
+            }
+        } catch (e: IOException) {
+            logger.error("ConfigManager: Unable to create the config directory: ${e.message}")
+            logger.error("ConfigManager: Please make sure that Impulse has permission to create the config directory.")
+            return
+        }
+
         val configFile = configDirectory.resolve(CONFIG_FILE_NAME)
         try {
-            if (!configFile.exists()) {
+            // toFile to work around mocking issues with the Path API
+            if (!configFile.toFile().exists()) {
                 val defaultConfig = Configuration()
                 val yamlString = yaml.encodeToString(Configuration.serializer(), defaultConfig)
-                configDirectory.resolve(CONFIG_FILE_NAME).writeText(yamlString)
+                configFile.toFile().writeText(yamlString)
             }
         } catch (e: IOException) {
             logger.warn("ConfigManager: Unable to create the default config file: ${e.message}")
