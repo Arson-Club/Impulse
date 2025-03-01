@@ -21,6 +21,15 @@ package club.arson.impulse.commandbroker
 import club.arson.impulse.api.config.BrokerConfig
 import kotlinx.serialization.Serializable
 
+/**
+ * Configuration for a jar broker
+ *
+ * @property workingDirectory The working directory to run the jar in
+ * @property address The address to bind the server to if using dynamic registration
+ * @property jarFile The jar file to run
+ * @property javaFlags Flags to pass to the JVM
+ * @property flags Flags to pass to the jar process
+ */
 @BrokerConfig("jar")
 @Serializable
 data class JarBrokerConfig(
@@ -31,6 +40,13 @@ data class JarBrokerConfig(
     var flags: List<String> = emptyList()
 )
 
+/**
+ * Convert a JarBrokerConfig to a CommandBrokerConfig
+ *
+ * The JarBroker is a wrapper around the CommandBroker, so we need to convert the JarBrokerConfig to a CommandBrokerConfig
+ * @param config The JarBrokerConfig to convert
+ * @return The equivalent CommandBrokerConfig
+ */
 fun toCommandBrokerConfig(config: JarBrokerConfig): CommandBrokerConfig {
     return CommandBrokerConfig(
         config.workingDirectory,

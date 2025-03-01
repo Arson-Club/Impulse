@@ -21,6 +21,13 @@ package club.arson.impulse.commandbroker
 import club.arson.impulse.api.config.BrokerConfig
 import kotlinx.serialization.Serializable
 
+/**
+ * Configuration for the CommandBroker
+ *
+ * @property workingDirectory The working directory to run the command in
+ * @property command The command to run
+ * @property address The address to bind to (if using dynamic registration)
+ */
 @BrokerConfig("cmd")
 @Serializable
 data class CommandBrokerConfig(

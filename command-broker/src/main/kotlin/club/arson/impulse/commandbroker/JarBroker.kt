@@ -24,6 +24,10 @@ import club.arson.impulse.api.server.Status
 import org.slf4j.Logger
 import java.net.InetSocketAddress
 
+/**
+ * This broker is designed to run raw jar files. The resulting PID is then managed as if it were a server. It is a
+ * wrapper around the CommandBroker.
+ */
 class JarBroker(serverConfig: ServerConfig, logger: Logger? = null) : Broker {
     private val commandBroker: CommandBroker
 
@@ -32,7 +36,6 @@ class JarBroker(serverConfig: ServerConfig, logger: Logger? = null) : Broker {
         serverConfig.config = cmdConfig
         commandBroker = CommandBroker(serverConfig, logger)
     }
-
 
     override fun address(): Result<InetSocketAddress> = commandBroker.address()
 
@@ -46,6 +49,14 @@ class JarBroker(serverConfig: ServerConfig, logger: Logger? = null) : Broker {
 
     override fun removeServer(): Result<Unit> = commandBroker.removeServer()
 
+    /**
+     * Reconcile any changes to our configuration.
+     *
+     * We need to do some minor validation before converting our JarBrokerConfig to a CommandBrokerConfig. After that,
+     * we call our parent reconcile method with the converted config.
+     * @param config Server configuration to reconcile
+     * @return A result containing a runnable if we were able to reconcile the configuration, else an error
+     */
     override fun reconcile(config: ServerConfig): Result<Runnable?> {
         if (config.type != "jar") {
             return Result.failure(IllegalArgumentException("Expected JarBrokerConfig and got something else!"))
