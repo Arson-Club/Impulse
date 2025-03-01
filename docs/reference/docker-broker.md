@@ -8,7 +8,7 @@ The docker broker is capable of connecting to a remote docker daemon. This is us
 to run the servers on a different machine. You can find instructions on how to set up a remote docker daemon
 [here](https://docs.docker.com/engine/daemon/remote-access/).
 > [!WARNING]
-> Connecting over TLS is not fully supported/tested yet. Only do this over a network you trust.
+> Connecting over TLS has experimental support. Verify its security before using it in a production environment.
 
 ## Configuration
 

@@ -18,10 +18,7 @@ that may be managing servers for multiple Velocity instances. It should be uniqu
 In Velocity a "broker" is an interface that Impulse uses to actually interact with different platforms that can host
 minecraft servers. For the next step select which broker you would like to use, and follow the instructions for that
 broker. You can find a basic description of each broker below with pros and cons. For more in depth information see
-the [brokers](brokers.md) documentation.
-
-> [!WARNING]
-> Currently only the [Docker](#Docker) broker is publicly available. The rest are still in development.
+the [brokers](../reference/brokers.md) documentation.
 
 ### Docker
 
@@ -32,12 +29,15 @@ allows for running servers on multiple machines.
 
 ### JAR
 
-The JAR broker is the simplest broker. It primarily designed for a single server setup and development. It is not
-recommended for multi-server configurations.
+The JAR broker is the simplest broker. It primarily designed for a single server setup and development. It only supports
+running servers on the same machine as Velocity.
 
-[NOT YET AVAILABLE]()
+[Continue to JAR Broker Setup](jar_broker.md)
 
 ### Kubernetes
+
+> [!WARNING]
+> This broker in not yet available. It is planned for a future release.
 
 The Kubernetes broker is for advanced setups and those already familiar with Kubernetes. It is the most powerful broker,
 but also significantly more complex to setup.

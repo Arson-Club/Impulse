@@ -18,7 +18,8 @@ on which broker you choose, you may need to install additional software on your 
 
 ### Docker
 
-Currently Docker is the only broker implementation available. Any computer you would like Impulse to run servers on via this
+Currently Docker is the only broker implementation available. Any computer you would like Impulse to run servers on via
+this
 broker must have docker installed. You can follow the
 [official docker installation guide](https://docs.docker.com/get-docker/).
 
@@ -28,3 +29,12 @@ In this example, are running our backend servers on the same machine as our prox
 > For more information on the docker broker itself, see
 > the [docker broker documentation](../reference/docker-broker.md).
 > You can also find more complex examples in our [Examples]() section.
+
+### JAR
+
+The JAR broker simply requires the Java Runtime to be installed. Since it can only manage servers on the same machine as
+Velocity, this should already be installed.
+
+> [!TIP]
+> For more information on the JAR broker itself, see
+> the [JAR broker documentation](../reference/jar-broker.md).

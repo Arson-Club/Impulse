@@ -79,6 +79,8 @@ still be starting. For either case you can check the logs of the container by ru
 docker logs smp
 ```
 
+If using the JAR broker you can check the log outputs directly for any errors.
+
 Look for any errors in the logs, or wait for the server to finish starting. If you are still having issues feel free to
 open an issue on the [GitHub repository](https://github.com/Arson-Club/Impulse/issues)
 

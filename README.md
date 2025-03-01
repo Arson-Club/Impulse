@@ -14,7 +14,8 @@ hours a day?
 ## Installation
 
 In short, download our latest release from one of our sources and place it in your Velocity plugins folder. For more
-detailed instructions see our [installation](https://arson-club.github.io/Impulse/getting_started/installation.html) guide.
+detailed instructions see our [installation](https://arson-club.github.io/Impulse/getting_started/installation.html)
+guide.
 
 Sources:
 
@@ -30,7 +31,8 @@ For API documentation, see our [KDocs](https://arson-club.github.io/Impulse/kdoc
 ## Quick Start
 
 > [!TIP]
-> Looking for a more in-depth guide? See our [Getting Started](https://arson-club.github.io/Impulse/getting_started/index.html)
+> Looking for a more in-depth guide? See
+> our [Getting Started](https://arson-club.github.io/Impulse/getting_started/index.html)
 > documentation.
 
 The following configuration should get you started with a simple lobby server.
@@ -72,7 +74,7 @@ servers:
         ALLOW_NETHER: "FALSE"
         MODE: "adventure"
       volumes:
-        "/srv/lobby": "/data"
+        - "/srv/lobby:/data"
 ```
 
 ### Step 3: Configure the MC Server
@@ -115,4 +117,5 @@ respond.
 All contributions are welcome! For more specific instructions see
 our [contributing](https://arson-club.github.io/Impulse/contributing/contributing.html) page.
 
-For specifics on adding creating your own broker to integrate with another server platform see [our guide](https://arson-club.github.io/Impulse/contributing/creating-a-broker.html).
+For specifics on adding creating your own broker to integrate with another server platform
+see [our guide](https://arson-club.github.io/Impulse/contributing/creating-a-broker.html).
