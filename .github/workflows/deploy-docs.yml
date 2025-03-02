@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - feature/0.3.0-doc-updates
 
 jobs:
   deploy:
