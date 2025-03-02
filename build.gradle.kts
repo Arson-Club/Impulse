@@ -128,10 +128,10 @@ subprojects {
 }
 
 val combinedDistributionProjects = listOf(
-    Pair("api", "jar"),
+    Pair("api", "shadowJar"),
     Pair("app", "shadowJar"),
     Pair("docker-broker", "shadowJar"),
-    Pair("command-broker", "jar"),
+    Pair("command-broker", "shadowJar"),
 )
 
 tasks.register<Jar>("combinedDistributionShadowJar") {
@@ -142,6 +142,7 @@ tasks.register<Jar>("combinedDistributionShadowJar") {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
+    dependsOn(":command-broker:jar") // Hack to make github happy
     from(combinedDistributionProjects.map { p ->
         project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
     }.map { zipTree(it) })

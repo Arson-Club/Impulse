@@ -61,6 +61,7 @@ dokka {
 tasks {
     shadowJar {
         manifest {}
+        dependsOn(":api:shadowJar")
         from(sourceSets.main.get().output)
         relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
         relocate("com.github.docker.java", "club.arson.impulse.docker.java")
@@ -68,6 +69,7 @@ tasks {
         archiveBaseName.set("impulse-lite")
     }
     test {
+        dependsOn(":api:shadowJar")
         useJUnitPlatform()
     }
 }

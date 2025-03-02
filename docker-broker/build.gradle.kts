@@ -38,6 +38,7 @@ dependencies {
 tasks {
     shadowJar {
         manifest {}
+        dependsOn(":api:shadowJar")
         from(sourceSets.main.get().output)
         relocate("com.github.docker-java", "club.arson.impulse.docker-java")
         relocate("org.jetbrains.kotlinx", "club.arson.impulse.kotlinx")

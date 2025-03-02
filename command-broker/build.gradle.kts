@@ -34,6 +34,7 @@ dependencies {
 
 tasks {
     shadowJar {
+        dependsOn(":api:shadowJar")
         manifest {}
         from(sourceSets.main.get().output)
         archiveClassifier.set("")

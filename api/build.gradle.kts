@@ -18,6 +18,7 @@
 
 plugins {
     kotlin("jvm")
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 
     `dokka-convention`
     `java-library`
@@ -30,4 +31,12 @@ dokka {
 
 java {
     withSourcesJar()
+}
+
+tasks {
+    shadowJar {
+        manifest {}
+        from(sourceSets.main.get().output)
+        archiveClassifier.set("")
+    }
 }
