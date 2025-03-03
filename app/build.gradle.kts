@@ -35,7 +35,7 @@ dependencies {
 
     testImplementation(project(":api"))
     testImplementation(kotlin("test-junit5"))
-    testImplementation("io.mockk:mockk:1.13.16")
+    testImplementation("io.mockk:mockk:1.13.17")
     testImplementation("com.google.inject:guice:7.0.0")
 }
 
