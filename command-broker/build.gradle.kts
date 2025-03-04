@@ -17,26 +17,13 @@
  */
 
 plugins {
-    kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-
-    `dokka-convention`
+    buildsrc.convention.`kotlin-jvm`
+    buildsrc.convention.dokka
+    id("club.arson.impulse.base")
 }
+
 group = "club.arson.impulse"
-
-dokka {
-    dokkaSourceSets.configureEach {}
-}
 
 dependencies {
     implementation(project(":api"))
-}
-
-tasks {
-    shadowJar {
-        dependsOn(":api:shadowJar")
-        manifest {}
-        from(sourceSets.main.get().output)
-        archiveClassifier.set("")
-    }
 }

@@ -1,0 +1,38 @@
+[versions]
+kotlin = "2.1.20-RC"
+dokka = "2.0.0"
+docker = "3.4.1"
+kotlinxCoroutines = "1.10.1"
+shadow = "8.3.6"
+velocity = "3.4.0-SNAPSHOT"
+kaml = "0.72.0"
+classGraph = "4.8.179"
+mockk = "1.13.16"
+guice = "7.0.0"
+
+[libraries]
+kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlinSerializationPlugin = { module = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }
+kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+dokkaGradlePlugin = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
+dockerBase = { module = "com.github.docker-java:docker-java", version.ref = "docker" }
+dockerTransport = { module = "com.github.docker-java:docker-java-transport-httpclient5", version.ref = "docker" }
+kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+shadow = { module = "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin", version.ref = "shadow" }
+velocity = { module = "com.velocitypowered:velocity-api", version.ref = "velocity" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+classGraph = { module = "io.github.classgraph:classgraph", version.ref = "classGraph" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
+
+[bundles]
+docker = ["dockerBase", "dockerTransport"]
+app = ["kotlinReflect", "classGraph"]
+test = ["mockk", "guice"]
+
+[plugins]
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+dokkaPlugin = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+dokkaJavadocPlugin = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }

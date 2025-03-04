@@ -18,12 +18,24 @@
 
 plugins {
     `kotlin-dsl`
-    kotlin("jvm") version "2.1.20-RC"
-    kotlin("kapt") version "2.1.20-RC"
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10")
-    val dokkaVersion = providers.gradleProperty("dokkaVersion").getOrElse("2.0.0")
-    implementation("org.jetbrains.dokka:dokka-gradle-plugin:$dokkaVersion")
+    implementation(libs.kotlinGradlePlugin)
+    implementation(libs.dokkaGradlePlugin)
+    implementation(libs.shadow)
+    implementation(libs.kotlinSerializationPlugin)
+}
+
+gradlePlugin {
+    plugins {
+        register("impulse-base") {
+            id = "club.arson.impulse.base"
+            implementationClass = "buildsrc.convention.ImpulseBaseConventionPlugin"
+        }
+    }
 }

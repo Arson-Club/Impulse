@@ -16,27 +16,28 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-plugins {
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.10"
-    id("eclipse")
-    id("maven-publish")
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-    `dokka-convention`
+plugins {
+    buildsrc.convention.`kotlin-jvm`
+    buildsrc.convention.`shadow-jar`
+    buildsrc.convention.dokka
+
+    id("club.arson.impulse.base")
+
+    id("eclipse")
 }
 
 group = "club.arson.impulse"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("io.github.classgraph:classgraph:4.8.179")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.20-RC")
+    implementation(libs.bundles.app)
     implementation(project(":api"))
 
     testImplementation(project(":api"))
     testImplementation(kotlin("test-junit5"))
-    testImplementation("io.mockk:mockk:1.13.16")
-    testImplementation("com.google.inject:guice:7.0.0")
+    testImplementation(libs.bundles.test)
 }
 
 val templateSource = file("src/main/templates")
@@ -54,22 +55,13 @@ sourceSets.main.configure { java.srcDir(generateTemplates.map { it.outputs }) }
 
 project.eclipse.synchronizationTasks(generateTemplates)
 
-dokka {
-    dokkaSourceSets.configureEach {}
+tasks.withType<ShadowJar>().configureEach {
+    relocate("org.jetbrains.kotlin", "club.arson.impulse.kotlin")
+    relocate("io.github.classgraph", "club.arson.impulse.classgraph")
+    archiveBaseName = "impulse-lite"
 }
 
-tasks {
-    shadowJar {
-        manifest {}
-        dependsOn(":api:shadowJar")
-        from(sourceSets.main.get().output)
-        relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
-        relocate("com.github.docker.java", "club.arson.impulse.docker.java")
-        archiveClassifier.set("")
-        archiveBaseName.set("impulse-lite")
-    }
-    test {
-        dependsOn(":api:shadowJar")
-        useJUnitPlatform()
-    }
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+    dependsOn(":api:jar")
 }

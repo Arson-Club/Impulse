@@ -19,12 +19,9 @@
 group = "club.arson"
 
 plugins {
-    kotlin("jvm")
-    kotlin("kapt")
-    kotlin("plugin.serialization") version "2.1.20-RC"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("jacoco")
-    `dokka-convention`
+    buildsrc.convention.`kotlin-jvm`
+    buildsrc.convention.dokka
+
     `maven-publish`
 }
 
@@ -39,93 +36,84 @@ dependencies {
     }
 }
 
-subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.kotlin.kapt")
-    apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
-    apply(plugin = "com.github.johnrengelman.shadow")
-    apply(plugin = "maven-publish")
-    apply(plugin = "jacoco")
-
-    dependencies {
-        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-        kapt("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-
-        implementation("com.charleskorn.kaml:kaml:0.72.0")
-        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-    }
-
-    val targetJavaVersion = 17
-    kotlin {
-        jvmToolchain(targetJavaVersion)
-    }
-
-    jacoco {
-        toolVersion = "0.8.12"
-    }
-
-    tasks.jacocoTestReport {
-        dependsOn(tasks.test)
-
-        reports {
-            xml.required.set(true)
-            html.required.set(false)
-        }
-    }
-
-    tasks.test {
-        useJUnitPlatform()
-
-        testLogging {
-            events("passed", "skipped", "failed")
-        }
-
-        reports {
-            junitXml.required.set(true)
-            html.required.set(false)
-        }
-    }
-
-    publishing {
-        publications {
-            create<MavenPublication>("shadowJarPublication") {
-                artifact(tasks.named("shadowJar").get())
-
-                groupId = "club.arson.impulse"
-                artifactId = project.name
-                version = project.version.toString()
-
-                pom {
-                    name = project.name
-                    url = "https://github.com/Arson-Club/Impulse"
-                    licenses {
-                        license {
-                            name = "GNU Affero General Public License"
-                            url = "https://www.gnu.org/licenses/"
-                        }
-                    }
-                    developers {
-                        developer {
-                            id = "dabb1e"
-                            name = "Dabb1e"
-                            email = "dabb1e@arson.club"
-                        }
-                    }
-                }
-            }
-        }
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
-    }
-}
+//subprojects {
+//    dependencies {
+//        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+//        implementation("com.charleskorn.kaml:kaml:0.72.0")
+//        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
+//    }
+//
+//    val targetJavaVersion = 17
+//    kotlin {
+//        jvmToolchain(targetJavaVersion)
+//    }
+//
+//    jacoco {
+//        toolVersion = "0.8.12"
+//    }
+//
+//    tasks.jacocoTestReport {
+//        dependsOn(tasks.test)
+//
+//        reports {
+//            xml.required.set(true)
+//            html.required.set(false)
+//        }
+//    }
+//
+//    tasks.test {
+//        useJUnitPlatform()
+//
+//        testLogging {
+//            events("passed", "skipped", "failed")
+//        }
+//
+//        reports {
+//            junitXml.required.set(true)
+//            html.required.set(false)
+//        }
+//    }
+//
+//    publishing {
+//        publications {
+//            create<MavenPublication>("shadowJarPublication") {
+//                artifact(tasks.named("shadowJar").get())
+//
+//                groupId = "club.arson.impulse"
+//                artifactId = project.name
+//                version = project.version.toString()
+//
+//                pom {
+//                    name = project.name
+//                    url = "https://github.com/Arson-Club/Impulse"
+//                    licenses {
+//                        license {
+//                            name = "GNU Affero General Public License"
+//                            url = "https://www.gnu.org/licenses/"
+//                        }
+//                    }
+//                    developers {
+//                        developer {
+//                            id = "dabb1e"
+//                            name = "Dabb1e"
+//                            email = "dabb1e@arson.club"
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        repositories {
+//            maven {
+//                name = "GitHubPackages"
+//                url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
+//                credentials {
+//                    username = System.getenv("GITHUB_ACTOR")
+//                    password = System.getenv("GITHUB_TOKEN")
+//                }
+//            }
+//        }
+//    }
+//}
 
 val combinedDistributionProjects = listOf(
     Pair("api", "shadowJar"),
@@ -134,57 +122,57 @@ val combinedDistributionProjects = listOf(
     Pair("command-broker", "shadowJar"),
 )
 
-tasks.register<Jar>("combinedDistributionShadowJar") {
-    group = "build"
-    description = "Builds the release jar combining the base app and core brokers"
-    archiveBaseName.set("impulse")
-    archiveClassifier.set("")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//tasks.register<Jar>("combinedDistributionShadowJar") {
+//    group = "build"
+//    description = "Builds the release jar combining the base app and core brokers"
+//    archiveBaseName.set("impulse")
+//    archiveClassifier.set("")
+//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//
+//    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
+//    dependsOn(":command-broker:jar") // Hack to make github happy
+//    dependsOn(":api:jar") // Hack to make github happy
+//    from(combinedDistributionProjects.map { p ->
+//        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
+//    }.map { zipTree(it) })
+//}
 
-    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
-    dependsOn(":command-broker:jar") // Hack to make github happy
-    dependsOn(":api:jar") // Hack to make github happy
-    from(combinedDistributionProjects.map { p ->
-        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
-    }.map { zipTree(it) })
-}
-
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
-            groupId = "club.arson"
-            artifactId = project.name
-            version = project.version.toString()
-
-            pom {
-                name = project.name
-                description = "Impulse Server Manager for Velocity"
-                url = "https://github.com/Arson-Club/Impulse"
-                licenses {
-                    license {
-                        name = "GNU Affero General Public License"
-                        url = "https://www.gnu.org/licenses/"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "dabb1e"
-                        name = "Dabb1e"
-                        email = "dabb1e@arson.club"
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
-}
+//publishing {
+//    publications {
+//        create<MavenPublication>("maven") {
+//            artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
+//            groupId = "club.arson"
+//            artifactId = project.name
+//            version = project.version.toString()
+//
+//            pom {
+//                name = project.name
+//                description = "Impulse Server Manager for Velocity"
+//                url = "https://github.com/Arson-Club/Impulse"
+//                licenses {
+//                    license {
+//                        name = "GNU Affero General Public License"
+//                        url = "https://www.gnu.org/licenses/"
+//                    }
+//                }
+//                developers {
+//                    developer {
+//                        id = "dabb1e"
+//                        name = "Dabb1e"
+//                        email = "dabb1e@arson.club"
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    repositories {
+//        maven {
+//            name = "GitHubPackages"
+//            url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
+//            credentials {
+//                username = System.getenv("GITHUB_ACTOR")
+//                password = System.getenv("GITHUB_TOKEN")
+//            }
+//        }
+//    }
+//}

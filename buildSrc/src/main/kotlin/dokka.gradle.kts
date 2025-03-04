@@ -1,5 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 /*
  *  Impulse Server Manager for Velocity
  *  Copyright (c) 2025  Dabb1e
@@ -18,22 +16,13 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+package buildsrc.convention
+
 plugins {
-    buildsrc.convention.`kotlin-jvm`
-    buildsrc.convention.`shadow-jar`
-    buildsrc.convention.dokka
-
-    id("club.arson.impulse.base")
-}
-group = "club.arson.impulse"
-
-dependencies {
-    implementation(libs.bundles.docker)
-    implementation(libs.kotlinxCoroutines)
-    implementation(project(":api"))
+    id("org.jetbrains.dokka")
+    id("org.jetbrains.dokka-javadoc")
 }
 
-tasks.withType<ShadowJar>().configureEach {
-    relocate("com.github.docker-java", "club.arson.impulse.docker-java")
-    relocate("org.jetbrains.kotlinx", "club.arson.impulse.kotlinx")
+dokka {
+    dokkaSourceSets.configureEach {}
 }

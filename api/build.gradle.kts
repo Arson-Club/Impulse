@@ -17,26 +17,14 @@
  */
 
 plugins {
-    kotlin("jvm")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    buildsrc.convention.`kotlin-jvm`
+    buildsrc.convention.dokka
+    id("club.arson.impulse.base")
 
-    `dokka-convention`
     `java-library`
 }
 group = "club.arson.impulse"
 
-dokka {
-    dokkaSourceSets.configureEach {}
-}
-
 java {
     withSourcesJar()
-}
-
-tasks {
-    shadowJar {
-        manifest {}
-        from(sourceSets.main.get().output)
-        archiveClassifier.set("")
-    }
 }
