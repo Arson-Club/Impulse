@@ -34,3 +34,4 @@ impulsePublish {
     artifact = tasks.named("jar").get()
     description = "API library for extending Impulse with your own plugins."
 }
+

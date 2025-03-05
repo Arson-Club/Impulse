@@ -35,62 +35,93 @@ data class RepositoryInfo(
     val password: String
 )
 
-open class ImpulsePublishExtension {
+interface ImpulsePublishExtension {
+    //TODO: Refactor these into maven POM license providers
     // Project licenses
-    val kamlLicense = LicenseInfo(
-        "Apache License 2.0",
-        "https://www.apache.org/licenses/LICENSE-2.0",
-        "Kaml library license"
-    )
-    val impulseLicense = LicenseInfo(
-        "GNU Affero General Public License",
-        "https://www.gnu.org/licenses/",
-        "License for all Impulse sources"
-    )
-    val classGraphLicense = LicenseInfo(
-        "MIT License",
-        "https://opensource.org/licenses/MIT",
-        "ClassGraph library license"
-    )
-    val dockerLicense = LicenseInfo(
-        "Apache License 2.0",
-        "https://www.apache.org/licenses/LICENSE-2.0",
-        "Docker library license"
-    )
+    val kamlLicense
+        get() = LicenseInfo(
+            "Apache License 2.0",
+            "https://www.apache.org/licenses/LICENSE-2.0",
+            "Kaml library license"
+        )
+    val impulseLicense
+        get() = LicenseInfo(
+            "GNU Affero General Public License",
+            "https://www.gnu.org/licenses/",
+            "License for all Impulse sources"
+        )
+    val classGraphLicense
+        get() = LicenseInfo(
+            "MIT License",
+            "https://opensource.org/licenses/MIT",
+            "ClassGraph library license"
+        )
+    val dockerLicense
+        get() = LicenseInfo(
+            "Apache License 2.0",
+            "https://www.apache.org/licenses/LICENSE-2.0",
+            "Docker library license"
+        )
 
     // Project repositories
-    val githubPackageRepo = RepositoryInfo(
-        "GitHubPackages",
-        "https://maven.pkg.github.com/Arson-Club/Impulse",
-        System.getenv("GITHUB_ACTOR") ?: "",
-        System.getenv("GITHUB_TOKEN") ?: ""
-    )
+    val githubPackageRepo
+        get() = RepositoryInfo(
+            "GitHubPackages",
+            "https://maven.pkg.github.com/Arson-Club/Impulse",
+            System.getenv("GITHUB_ACTOR") ?: "",
+            System.getenv("GITHUB_TOKEN") ?: ""
+        )
 
-    var artifact: Task? = null
-    var groupId = "club.arson.impulse"
-    var description = "Impulse Server Manager for Velocity"
-    var licenses = listOf(impulseLicense, kamlLicense)
-    var repositories = listOf(githubPackageRepo)
+    val artifact: Property<Task?>
+    val groupId: Property<String>
+    val description: Property<String>
+    val licenses: ListProperty<LicenseInfo>
+    val repositories: ListProperty<RepositoryInfo>
 }
 
 val extension = project.extensions.create<ImpulsePublishExtension>("impulsePublish")
+extension.artifact.convention(null)
+extension.groupId.convention("club.arson.impulse")
+extension.description.convention("Impulse Server Manager for Velocity")
+extension.licenses.convention(listOf(extension.impulseLicense, extension.kamlLicense))
+extension.repositories.convention(listOf(extension.githubPackageRepo))
 
+publishing {
+    publications {
+        create<MavenPublication>("impulse") {
+            artifact(extension.artifact)
+
+            artifactId = project.name
+            version = project.version.toString()
+
+            pom {
+                name = project.name
+                description = extension.description
+                url = "https://github.com/ArsonClub/Impulse"
+            }
+        }
+        repositories {
+            extension.repositories.get().forEach {
+                maven {
+                    name = it.name
+                    url = uri(it.url)
+                    credentials {
+                        username = it.username
+                        password = it.password
+                    }
+                }
+            }
+        }
+    }
+}
 project.afterEvaluate {
     publishing {
         publications {
-            create<MavenPublication>("${project.name}-impulse") {
-                artifact(extension.artifact)
-
-                groupId = extension.groupId
-                artifactId = project.name
-                version = project.version.toString()
-
+            named<MavenPublication>("impulse") {
+                groupId = extension.groupId.get()
                 pom {
-                    name = project.name
-                    description = extension.description
-                    url = "https://github.com/ArsonClub/Impulse"
                     licenses {
-                        extension.licenses.forEach {
+                        extension.licenses.get().forEach {
                             license {
                                 name = it.name
                                 url = it.url
@@ -103,18 +134,6 @@ project.afterEvaluate {
                                 name = "Dabb1e"
                                 email = "dabb1e@arson.club"
                             }
-                        }
-                    }
-                }
-            }
-            repositories {
-                extension.repositories.forEach {
-                    maven {
-                        name = it.name
-                        url = uri(it.url)
-                        credentials {
-                            username = it.username
-                            password = it.password
                         }
                     }
                 }

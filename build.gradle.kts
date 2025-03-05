@@ -47,14 +47,15 @@ val combinedDistributionProjects = listOf(
 tasks.withType<ShadowJar>().configureEach {
     archiveBaseName = "impulse"
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
-//    from(combinedDistributionProjects.map { p ->
-//        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
-//    }.map { zipTree(it) })
+
+    combinedDistributionProjects.forEach { (projectName, taskName) ->
+        dependsOn(":$projectName:$taskName")
+        from(provider { project(":$projectName").tasks.named(taskName).get().outputs.files })
+    }
 }
 
 impulsePublish {
-    artifact = tasks.named("shadowJar").get().mustRunAfter(":api")
+    artifact = tasks.named("shadowJar").get()
     groupId = "club.arson"
     description = "Impulse Server Manager for Velocity. Full distribution (all default brokers)."
     licenses = listOf(
