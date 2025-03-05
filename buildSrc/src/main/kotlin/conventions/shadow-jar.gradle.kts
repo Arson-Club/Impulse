@@ -16,7 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package buildsrc.convention
+package conventions
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
@@ -58,6 +58,6 @@ tasks.named("build") {
     dependsOn("shadowJar")
 }
 
-//tasks.withType<Jar>().configureEach {
-//    enabled = true
-//}
+tasks.named("jar") {
+    enabled = false
+}

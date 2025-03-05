@@ -16,11 +16,13 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 group = "club.arson"
 
 plugins {
-    buildsrc.convention.`kotlin-jvm`
-    buildsrc.convention.dokka
+    conventions.`impulse-base`
+    conventions.`shadow-jar`
 
     `maven-publish`
 }
@@ -36,44 +38,23 @@ dependencies {
     }
 }
 
+val combinedDistributionProjects = listOf(
+    Pair("api", "jar"),
+    Pair("app", "shadowJar"),
+    Pair("docker-broker", "shadowJar"),
+    Pair("command-broker", "jar"),
+)
+
+tasks.withType<ShadowJar>().configureEach {
+    archiveBaseName = "impulse"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
+    from(combinedDistributionProjects.map { p ->
+        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
+    }.map { zipTree(it) })
+}
+
 //subprojects {
-//    dependencies {
-//        compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-//        implementation("com.charleskorn.kaml:kaml:0.72.0")
-//        testImplementation("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
-//    }
-//
-//    val targetJavaVersion = 17
-//    kotlin {
-//        jvmToolchain(targetJavaVersion)
-//    }
-//
-//    jacoco {
-//        toolVersion = "0.8.12"
-//    }
-//
-//    tasks.jacocoTestReport {
-//        dependsOn(tasks.test)
-//
-//        reports {
-//            xml.required.set(true)
-//            html.required.set(false)
-//        }
-//    }
-//
-//    tasks.test {
-//        useJUnitPlatform()
-//
-//        testLogging {
-//            events("passed", "skipped", "failed")
-//        }
-//
-//        reports {
-//            junitXml.required.set(true)
-//            html.required.set(false)
-//        }
-//    }
-//
 //    publishing {
 //        publications {
 //            create<MavenPublication>("shadowJarPublication") {
@@ -115,27 +96,6 @@ dependencies {
 //    }
 //}
 
-val combinedDistributionProjects = listOf(
-    Pair("api", "shadowJar"),
-    Pair("app", "shadowJar"),
-    Pair("docker-broker", "shadowJar"),
-    Pair("command-broker", "shadowJar"),
-)
-
-//tasks.register<Jar>("combinedDistributionShadowJar") {
-//    group = "build"
-//    description = "Builds the release jar combining the base app and core brokers"
-//    archiveBaseName.set("impulse")
-//    archiveClassifier.set("")
-//    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-//
-//    dependsOn(combinedDistributionProjects.map { ":${it.first}:${it.second}" })
-//    dependsOn(":command-broker:jar") // Hack to make github happy
-//    dependsOn(":api:jar") // Hack to make github happy
-//    from(combinedDistributionProjects.map { p ->
-//        project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
-//    }.map { zipTree(it) })
-//}
 
 //publishing {
 //    publications {

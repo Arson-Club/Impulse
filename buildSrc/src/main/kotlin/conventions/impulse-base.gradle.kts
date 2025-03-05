@@ -1,4 +1,4 @@
-/*
+package conventions/*
  *  Impulse Server Manager for Velocity
  *  Copyright (c) 2025  Dabb1e
  *
@@ -16,19 +16,48 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package buildsrc.convention
-
+import gradle.kotlin.dsl.accessors._110d06f1c91740f344348ad5b10ec2ec.*
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.kotlin
+import org.gradle.kotlin.dsl.withType
+import utils.libs
+import kotlin.invoke
 
 plugins {
     id("jacoco")
+    id("org.jetbrains.dokka")
+    id("org.jetbrains.dokka-javadoc")
     kotlin("jvm")
     kotlin("kapt")
     kotlin("plugin.serialization")
 }
 
+dependencies {
+    add("compileOnly", libs.velocity)
+    add("implementation", libs.kaml)
+    add("testImplementation", libs.bundles.test)
+}
+
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
+}
+
+dokka {
+    dokkaSourceSets.configureEach {}
+}
+
+jacoco {
+    toolVersion = "${libs.plugins.jacoco.get().version}"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required = true
+        html.required = false
+    }
 }
 
 tasks.withType<Test>().configureEach {
@@ -40,5 +69,10 @@ tasks.withType<Test>().configureEach {
             TestLogEvent.PASSED,
             TestLogEvent.SKIPPED
         )
+    }
+
+    reports {
+        junitXml.required = true
+        html.required = false
     }
 }

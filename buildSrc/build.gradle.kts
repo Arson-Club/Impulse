@@ -29,13 +29,5 @@ dependencies {
     implementation(libs.dokkaGradlePlugin)
     implementation(libs.shadow)
     implementation(libs.kotlinSerializationPlugin)
-}
-
-gradlePlugin {
-    plugins {
-        register("impulse-base") {
-            id = "club.arson.impulse.base"
-            implementationClass = "buildsrc.convention.ImpulseBaseConventionPlugin"
-        }
-    }
+    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }

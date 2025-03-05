@@ -17,9 +17,7 @@
  */
 
 plugins {
-    buildsrc.convention.`kotlin-jvm`
-    buildsrc.convention.dokka
-    id("club.arson.impulse.base")
+    conventions.`impulse-base`
 }
 
 group = "club.arson.impulse"

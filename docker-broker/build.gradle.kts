@@ -19,11 +19,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
  */
 
 plugins {
-    buildsrc.convention.`kotlin-jvm`
-    buildsrc.convention.`shadow-jar`
-    buildsrc.convention.dokka
-
-    id("club.arson.impulse.base")
+    conventions.`impulse-base`
+    conventions.`shadow-jar`
 }
 group = "club.arson.impulse"
 

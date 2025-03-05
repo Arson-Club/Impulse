@@ -23,7 +23,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Build and test with Gradle
-        run: ./gradlew build shadowJar jar test jacocoTestReport
+        run: ./gradlew build test jacocoTestReport
 
       - name: Upload JaCoCo reports to Codecov
         uses: codecov/codecov-action@v5

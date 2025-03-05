@@ -15,15 +15,11 @@
  *  You should have received a copy of the GNU Affero General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    buildsrc.convention.`kotlin-jvm`
-    buildsrc.convention.`shadow-jar`
-    buildsrc.convention.dokka
-
-    id("club.arson.impulse.base")
+    conventions.`impulse-base`
+    conventions.`shadow-jar`
 
     id("eclipse")
 }
@@ -31,13 +27,12 @@ plugins {
 group = "club.arson.impulse"
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation(libs.bundles.app)
+    implementation(libs.kotlinReflect)
+    implementation(libs.kotlinStdLib)
+    implementation(libs.classGraph)
     implementation(project(":api"))
 
     testImplementation(project(":api"))
-    testImplementation(kotlin("test-junit5"))
-    testImplementation(libs.bundles.test)
 }
 
 val templateSource = file("src/main/templates")
