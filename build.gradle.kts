@@ -22,6 +22,7 @@ group = "club.arson"
 
 plugins {
     conventions.`impulse-base`
+//    conventions.`impulse-publish`
     conventions.`shadow-jar`
 
     `maven-publish`
@@ -52,25 +53,41 @@ tasks.withType<ShadowJar>().configureEach {
     from(combinedDistributionProjects.map { p ->
         project(p.first).tasks.named(p.second).map { (it as Jar).archiveFile.get().asFile }
     }.map { zipTree(it) })
+    dependsOn(":api:jar")
 }
 
-//subprojects {
-//    publishing {
-//        publications {
-//            create<MavenPublication>("shadowJarPublication") {
-//                artifact(tasks.named("shadowJar").get())
-//
-//                groupId = "club.arson.impulse"
-//                artifactId = project.name
-//                version = project.version.toString()
-//
-//                pom {
-//                    name = project.name
-//                    url = "https://github.com/Arson-Club/Impulse"
-//                    licenses {
+//impulsePublish {
+//    artifact = tasks.named("shadowJar").get().mustRunAfter(":api")
+//    publicationName = "combinedImpulse"
+//    description = "Impulse Server Manager for Velocity. Full distribution (all default brokers)."
+//    licenses = listOf(
+//        impulseLicense,
+//        kamlLicense,
+//        classGraphLicense,
+//        dockerLicense
+//    )
+//}
+publishing {
+    publications {
+        create<MavenPublication>("${project.name}-impulse") {
+            //artifact(project.tasks.named("shadowJar").get())
+            //artifact(project.tasks.named(extension.artifactType).get())
+
+
+            groupId = "club.arson"
+            artifactId = project.name
+            version = project.version.toString()
+
+            pom {
+//                name = project.name
+//                description = extension.description
+//                url = "https://github.com/ArsonClub/Impulse"
+//                licenses {
+//                    extension.licenses.forEach {
 //                        license {
-//                            name = "GNU Affero General Public License"
-//                            url = "https://www.gnu.org/licenses/"
+//                            name = it.name
+//                            url = it.url
+//                            comments = it.comments
 //                        }
 //                    }
 //                    developers {
@@ -81,58 +98,19 @@ tasks.withType<ShadowJar>().configureEach {
 //                        }
 //                    }
 //                }
-//            }
-//        }
-//        repositories {
-//            maven {
-//                name = "GitHubPackages"
-//                url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-//                credentials {
-//                    username = System.getenv("GITHUB_ACTOR")
-//                    password = System.getenv("GITHUB_TOKEN")
-//                }
-//            }
-//        }
-//    }
-//}
-
-
-//publishing {
-//    publications {
-//        create<MavenPublication>("maven") {
-//            artifact(tasks.named<Jar>("combinedDistributionShadowJar").get())
-//            groupId = "club.arson"
-//            artifactId = project.name
-//            version = project.version.toString()
-//
-//            pom {
-//                name = project.name
-//                description = "Impulse Server Manager for Velocity"
-//                url = "https://github.com/Arson-Club/Impulse"
-//                licenses {
-//                    license {
-//                        name = "GNU Affero General Public License"
-//                        url = "https://www.gnu.org/licenses/"
-//                    }
-//                }
-//                developers {
-//                    developer {
-//                        id = "dabb1e"
-//                        name = "Dabb1e"
-//                        email = "dabb1e@arson.club"
+            }
+        }
+        repositories {
+//            extension.repositories.forEach {
+//                maven {
+//                    name = it.name
+//                    url = uri(it.url)
+//                    credentials {
+//                        username = it.username
+//                        password = it.password
 //                    }
 //                }
 //            }
-//        }
-//    }
-//    repositories {
-//        maven {
-//            name = "GitHubPackages"
-//            url = uri("https://maven.pkg.github.com/Arson-Club/Impulse")
-//            credentials {
-//                username = System.getenv("GITHUB_ACTOR")
-//                password = System.getenv("GITHUB_TOKEN")
-//            }
-//        }
-//    }
-//}
+        }
+    }
+}

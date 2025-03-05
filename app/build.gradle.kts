@@ -19,6 +19,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     conventions.`impulse-base`
+    conventions.`impulse-publish`
     conventions.`shadow-jar`
 
     id("eclipse")
@@ -59,4 +60,14 @@ tasks.withType<ShadowJar>().configureEach {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     dependsOn(":api:jar")
+}
+
+impulsePublish {
+    artifact = tasks.named("shadowJar").get()
+    description = "Lite distribution of Impulse without any bundled brokers."
+    licenses = listOf(
+        kamlLicense,
+        impulseLicense,
+        classGraphLicense
+    )
 }

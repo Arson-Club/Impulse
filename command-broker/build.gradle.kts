@@ -18,10 +18,17 @@
 
 plugins {
     conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.jar
 }
 
 group = "club.arson.impulse"
 
 dependencies {
     implementation(project(":api"))
+}
+
+impulsePublish {
+    artifact = tasks.named("jar").get()
+    description = "Raw command and JAR based brokers for Impulse."
 }

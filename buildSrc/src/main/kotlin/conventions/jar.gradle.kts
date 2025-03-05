@@ -16,32 +16,23 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+package conventions
 
-plugins {
-    conventions.`impulse-base`
-    conventions.`impulse-publish`
-    conventions.`shadow-jar`
-}
-group = "club.arson.impulse"
+tasks.withType<Jar>().configureEach {
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+                "Implementation-Vendor" to "Arson Club"
+            )
+        )
+    }
 
-dependencies {
-    implementation(libs.bundles.docker)
-    implementation(libs.kotlinxCoroutines)
-    implementation(project(":api"))
-}
+    exclude("META-INF/*.SF")
+    exclude("META-INF/*.DSA")
+    exclude("META-INF/*.RSA")
 
-tasks.withType<ShadowJar>().configureEach {
-    relocate("com.github.docker-java", "club.arson.impulse.docker-java")
-    relocate("org.jetbrains.kotlinx", "club.arson.impulse.kotlinx")
-}
-
-impulsePublish {
-    artifact = tasks.named("shadowJar").get()
-    description = "Docker broker for Impulse."
-    licenses = listOf(
-        impulseLicense,
-        kamlLicense,
-        dockerLicense
-    )
+    isReproducibleFileOrder = true
+    isPreserveFileTimestamps = false
 }

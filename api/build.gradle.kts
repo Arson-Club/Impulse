@@ -18,11 +18,19 @@
 
 plugins {
     conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.jar
 
     `java-library`
 }
+
 group = "club.arson.impulse"
 
 java {
     withSourcesJar()
+}
+
+impulsePublish {
+    artifact = tasks.named("jar").get()
+    description = "API library for extending Impulse with your own plugins."
 }
