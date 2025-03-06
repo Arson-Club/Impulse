@@ -86,40 +86,20 @@ extension.description.convention("Impulse Server Manager for Velocity")
 extension.licenses.convention(listOf(extension.impulseLicense, extension.kamlLicense))
 extension.repositories.convention(listOf(extension.githubPackageRepo))
 
-publishing {
-    publications {
-        create<MavenPublication>("impulse") {
-            artifact(extension.artifact)
-
-            artifactId = project.name
-            version = project.version.toString()
-
-            pom {
-                name = project.name
-                description = extension.description
-                url = "https://github.com/ArsonClub/Impulse"
-            }
-        }
-        repositories {
-            extension.repositories.get().forEach {
-                maven {
-                    name = it.name
-                    url = uri(it.url)
-                    credentials {
-                        username = it.username
-                        password = it.password
-                    }
-                }
-            }
-        }
-    }
-}
 project.afterEvaluate {
     publishing {
         publications {
-            named<MavenPublication>("impulse") {
+            create<MavenPublication>("impulse") {
+                artifact(extension.artifact)
+
+                artifactId = project.name
+                version = project.version.toString()
                 groupId = extension.groupId.get()
                 pom {
+                    name = project.name
+                    description = extension.description
+                    url = "https://github.com/ArsonClub/Impulse"
+
                     licenses {
                         extension.licenses.get().forEach {
                             license {
@@ -135,6 +115,18 @@ project.afterEvaluate {
                                 email = "dabb1e@arson.club"
                             }
                         }
+                    }
+                }
+            }
+        }
+        repositories {
+            extension.repositories.get().forEach {
+                maven {
+                    name = it.name
+                    url = uri(it.url)
+                    credentials {
+                        username = it.username
+                        password = it.password
                     }
                 }
             }
