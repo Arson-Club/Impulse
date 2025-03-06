@@ -3,9 +3,6 @@ name: Gradle Package
 on:
   release:
     types: [ created, edited ]
-  push:
-    branches:
-      - feature/fix-build-scripts
 
 jobs:
   build:
@@ -29,10 +26,10 @@ jobs:
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
       - name: Build with Gradle
-        run: ./gradlew -Pversion="0.3.1-SNAPSHOT" build
+        run: ./gradlew -Pversion=${{ github.ref_name }} build
 
       - name: Publish to GitHub Packages
-        run: ./gradlew -Pversion="0.3.1-SNAPSHOT" publish
+        run: ./gradlew -Pversion=${{ github.ref_name }} publish
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
