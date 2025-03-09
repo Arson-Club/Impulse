@@ -31,6 +31,7 @@ plugins {
 }
 
 dependencies {
+    kapt(libs.velocity)
     add("compileOnly", libs.velocity)
     add("implementation", libs.kaml)
     add("testImplementation", libs.bundles.test)
