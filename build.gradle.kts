@@ -30,6 +30,7 @@ dependencies {
         "app",
         "docker-broker",
         "command-broker",
+        "oraclecloud-broker",
     ).forEach {
         dokka(project(":$it:"))
     }

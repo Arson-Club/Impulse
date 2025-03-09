@@ -40,9 +40,9 @@ tasks.withType<ShadowJar>().configureEach {
 
     relocate("com.charleskorn.kaml", "club.arson.impulse.kaml")
 
-    minimize {
-        exclude(dependency("org.jetbrains.kotlin:.*:.*"))
-    }
+//    minimize {
+//        exclude(dependency("org.jetbrains.kotlin:.*:.*"))
+//    }
 
     exclude("META-INF/*.SF")
     exclude("META-INF/*.DSA")

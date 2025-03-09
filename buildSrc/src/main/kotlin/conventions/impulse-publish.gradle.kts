@@ -62,6 +62,12 @@ interface ImpulsePublishExtension {
             "https://www.apache.org/licenses/LICENSE-2.0",
             "Docker library license"
         )
+    val ociLicense
+        get() = LicenseInfo(
+            "Apache License 2.0",
+            "https://www.apache.org/licenses/LICENSE-2.0",
+            "Oracle Cloud Infrastructure library license"
+        )
 
     // Project repositories
     val githubPackageRepo

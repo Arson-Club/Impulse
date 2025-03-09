@@ -28,6 +28,7 @@ import com.velocitypowered.api.command.BrigadierCommand
 import com.velocitypowered.api.command.CommandSource
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 
 fun getServerStatusMessage(name: String, status: Status, padTo: Int = 0): Component {
     return Component.text()
@@ -36,9 +37,12 @@ fun getServerStatusMessage(name: String, status: Status, padTo: Int = 0): Compon
             Component.text(status.toString())
                 .color(
                     when (status) {
+                        Status.STARTING -> NamedTextColor.YELLOW
                         Status.RUNNING -> NamedTextColor.GREEN
                         Status.STOPPED -> NamedTextColor.GRAY
-                        Status.REMOVED -> NamedTextColor.YELLOW
+                        // Orange 
+                        Status.REMOVED -> TextColor.color(0xff8c00)
+
                         Status.UNKNOWN -> NamedTextColor.RED
                     }
                 )

@@ -23,6 +23,12 @@ pages.
 | Docker Java Client | Apache-2.0 | [Github](https://github.com/docker-java/docker-java)   |
 | Kotlinx Coroutines | Apache-2.0 | [Github](https://github.com/Kotlin/kotlinx.coroutines) |
 
+### Oracle Cloud Broker
+
+| Library          | License    | Link                                             |
+|------------------|------------|--------------------------------------------------|
+| Oracle Cloud SDK | Apache-2.0 | [Github](https://github.com/oracle/oci-java-sdk) |
+
 ## Documentation
 
 This documentation also uses the following technologies and libraries:

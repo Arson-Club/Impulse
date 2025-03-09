@@ -120,7 +120,7 @@ runs/
 !gradle-wrapper.jar
 
 # Temp ignores untill the files are ready
-src/main/java
+oraclecloud-broker/src/main/java
 
 # MDBook ignores
 book/

@@ -10,6 +10,7 @@ classGraph = "4.8.179"
 mockk = "1.13.17"
 guice = "7.0.0"
 jacoco = "0.8.12"
+oci = "3.59.0"
 
 [libraries]
 kotlinStdLib = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
@@ -27,10 +28,16 @@ kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 classGraph = { module = "io.github.classgraph:classgraph", version.ref = "classGraph" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 guice = { module = "com.google.inject:guice", version.ref = "guice" }
+ociBOM = { module = "com.oracle.oci.sdk:oci-java-sdk-bom", version.ref = "oci" }
+ociHttpClient = { module = "com.oracle.oci.sdk:oci-java-sdk-common-httpclient-jersey3", version.ref = "oci" }
+ociCore = { module = "com.oracle.oci.sdk:oci-java-sdk-core", version.ref = "oci" }
+ociIdentity = { module = "com.oracle.oci.sdk:oci-java-sdk-identity", version.ref = "oci" }
+ociSearch = { module = "com.oracle.oci.sdk:oci-java-sdk-resourcesearch", version.ref = "oci" }
 
 [bundles]
 docker = ["dockerBase", "dockerTransport"]
 test = ["mockk", "guice", "velocity", "kotlinTestjunit5"]
+oci = ["ociHttpClient", "ociCore", "ociIdentity", "ociSearch"]
 
 [plugins]
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }

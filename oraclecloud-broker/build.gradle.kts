@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 /*
  *  Impulse Server Manager for Velocity
  *  Copyright (c) 2025  Dabb1e
@@ -16,37 +18,29 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-@file:Suppress("UnstableApiUsage")
+plugins {
+    conventions.`impulse-base`
+    conventions.`impulse-publish`
+    conventions.`shadow-jar`
+}
+group = "club.arson.impulse"
 
-rootProject.name = "impulse"
-
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
+dependencies {
+    implementation(platform(libs.ociBOM))
+    implementation(libs.bundles.oci)
+    implementation(project(":api"))
 }
 
-dependencyResolutionManagement {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") {
-            name = "papermc-repo"
-        }
-        maven("https://oss.sonatype.org/content/groups/public/") {
-            name = "sonatype"
-        }
-    }
+tasks.withType<ShadowJar>().configureEach {
+    relocate("com.oracle.oci.sdk", "club.arson.impulse.oci.sdk")
 }
 
-sequenceOf(
-    "api",
-    "app",
-    "docker-broker",
-    "command-broker",
-    "oraclecloud-broker",
-).forEach {
-    val p = ":$it"
-    include(p)
-    project(p).projectDir = file(it)
+impulsePublish {
+    artifact = tasks.named("shadowJar").get()
+    description = "Oracle Cloud broker for Impulse."
+    licenses = listOf(
+        impulseLicense,
+        kamlLicense,
+        ociLicense
+    )
 }
