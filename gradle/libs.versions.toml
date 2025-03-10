@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.1.20-RC"
 dokka = "2.0.0"
-docker = "3.4.1"
+docker = "3.4.2"
 kotlinxCoroutines = "1.10.1"
 shadow = "8.3.6"
 velocity = "3.4.0-SNAPSHOT"
