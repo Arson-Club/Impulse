@@ -17,16 +17,16 @@ We provide several first party brokers. You can find more information on each br
 > [!NOTE]
 > Not all brokers are available in the default distribution. You may need to add them to your Impulse installation.
 
-- [Docker](docker-broker.md) **(Included in default distribution)**
-- [JAR]()
+- [Docker](docker-broker.md)
+- [JAR](jar-broker.md)
 - [Kubernetes]()
 
 ## Third Party Brokers
 
 Additionally, you can create your own broker or source them from others. For more information see our guide
 on [creating a broker](../contributing/creating-a-broker.md). Here is a list of some notable third party brokers:
-> [!WARNING]
+> [!IMPORTANT]
 > These brokers are not tested or maintained by the Impulse team. Make sure to verify them and report any issues to the
 > respective authors.
 
-- None yet. Feel free to submit a PR to add your broker here!
+- [Crafty Controller](https://github.com/Thebestandgreatest/craftybroker)
