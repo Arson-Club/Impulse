@@ -54,7 +54,8 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
         message: String? = null
     ): ServerResult {
         if (previousServer == null) {
-            player.disconnect(getMM(message))
+            // This is a workaround so that velocity will continue to hunt the try list
+            throw IllegalStateException("Server hit timeout while starting: ${message ?: "Unknown error"}")
         } else {
             player.sendMessage(getMM(message))
         }
@@ -72,7 +73,7 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
             // if the server is not running and auto start is enabled, start the server
             if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
                 server.startServer().onSuccess {
-                    logger.trace("Server started successfully, allowing connection")
+                    logger.debug("Server started successfully, allowing connection")
                     isRunning = true
                 }.onFailure {
                     logger.warn("Error: failed to start server, rejecting connection")
@@ -86,6 +87,7 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                     logger.trace("Server reporting ready, transferring player")
                     prevServer?.handleDisconnect(event.player.username)
                 }.onFailure {
+                    logger.debug("Server failed to report ready, rejecting connection")
                     event.result = handleTimeout(
                         event.player,
                         event.previousServer,
@@ -110,7 +112,6 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
         } else {
             logger.debug("Server is not managed by us, taking no action")
         }
-
     }
 
     /**

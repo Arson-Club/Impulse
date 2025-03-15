@@ -32,6 +32,7 @@ import io.mockk.verify
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import java.util.*
 
@@ -167,17 +168,15 @@ class PlayerLifecycleListenerTest {
 
         // New connection
         every { event.previousServer } returns null
-        playerLifecycleListener.handlePlayerConnectEvent(event)
+        assertThrows<IllegalStateException> { playerLifecycleListener.handlePlayerConnectEvent(event) }
         verify(exactly = 0) { server.startServer() }
-        verify(exactly = 1) { player.disconnect(any<Component>()) }
         verify(exactly = 0) { player.sendMessage(any<Component>()) }
-        verify { event.result = ServerResult.denied() }
 
         // Transferring player
         every { event.previousServer } returns mockk(relaxed = true)
         playerLifecycleListener.handlePlayerConnectEvent(event)
         verify(exactly = 0) { server.startServer() }
-        verify(exactly = 1) { player.disconnect(any<Component>()) }
+        verify(exactly = 0) { player.disconnect(any<Component>()) }
         verify(exactly = 1) { player.sendMessage(any<Component>()) }
         verify { event.result = ServerResult.denied() }
     }
@@ -203,18 +202,17 @@ class PlayerLifecycleListenerTest {
 
         // New connection
         every { event.previousServer } returns null
-        playerLifecycleListener.handlePlayerConnectEvent(event)
+        assertThrows<IllegalStateException> { playerLifecycleListener.handlePlayerConnectEvent(event) }
         verify(exactly = 0) { server.startServer() }
         verify(exactly = 0) { player.sendMessage(any()) }
-        verify(exactly = 1) { player.disconnect(any()) }
-        verify { event.result = ServerResult.denied() }
+        verify(exactly = 0) { player.disconnect(any()) }
 
         // Transferring player
         every { event.previousServer } returns mockk(relaxed = true)
         playerLifecycleListener.handlePlayerConnectEvent(event)
         verify(exactly = 0) { server.startServer() }
         verify(exactly = 1) { player.sendMessage(any()) }
-        verify(exactly = 1) { player.disconnect(any()) }
+        verify(exactly = 0) { player.disconnect(any()) }
         verify { event.result = ServerResult.denied() }
     }
 
@@ -238,10 +236,8 @@ class PlayerLifecycleListenerTest {
 
         ServiceRegistry.instance.serverManager = serverManager
 
-        playerLifecycleListener.handlePlayerConnectEvent(event)
+        assertThrows<IllegalStateException> { playerLifecycleListener.handlePlayerConnectEvent(event) }
         verify(exactly = 0) { server.startServer() }
-        verify(exactly = 1) { player.disconnect(any()) }
-        verify { event.result = ServerResult.denied() }
     }
 
     @Test
@@ -298,19 +294,18 @@ class PlayerLifecycleListenerTest {
 
         // New connection
         every { event.previousServer } returns null
-        playerLifecycleListener.handlePlayerConnectEvent(event)
+        assertThrows<IllegalStateException> { playerLifecycleListener.handlePlayerConnectEvent(event) }
         verify(exactly = 1) { server.startServer() }
         verify(exactly = 0) { server.awaitReady() }
-        verify(exactly = 1) { player.disconnect(any()) }
+        verify(exactly = 0) { player.disconnect(any()) }
         verify(exactly = 0) { player.sendMessage(any()) }
-        verify { event.result = ServerResult.denied() }
 
         // Transferring connection
         every { event.previousServer } returns mockk(relaxed = true)
         playerLifecycleListener.handlePlayerConnectEvent(event)
         verify(exactly = 2) { server.startServer() }
         verify(exactly = 0) { server.awaitReady() }
-        verify(exactly = 1) { player.disconnect(any()) }
+        verify(exactly = 0) { player.disconnect(any()) }
         verify(exactly = 1) { player.sendMessage(any()) }
         verify { event.result = ServerResult.denied() }
     }
