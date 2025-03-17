@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.1.20-RC2"
+kotlin = "2.1.20-RC3"
 dokka = "2.0.0"
 docker = "3.4.2"
 kotlinxCoroutines = "1.10.1"
