@@ -23,6 +23,7 @@ import club.arson.impulse.ServiceRegistry
 import club.arson.impulse.api.config.ReconcileBehavior
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.config.ShutdownBehavior
+import club.arson.impulse.api.events.AwaitingServerReadyEvent
 import club.arson.impulse.api.server.Broker
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
@@ -221,6 +222,7 @@ class Server @Inject constructor(
         val timeout = config.lifecycleSettings.timeouts.startup * 1000
         var isReady = false
 
+        proxyServer.eventManager.fireAndForget(AwaitingServerReadyEvent(serverRef))
         while (!isReady && isRunning() && System.currentTimeMillis() - startTime < timeout) {
             try {
                 serverRef.ping().get()
@@ -259,6 +261,19 @@ class Server @Inject constructor(
         // Bail if the player is not connecting to this server
         val currentServer = event.player.currentServer.orElse(null) ?: return
         if (currentServer.serverInfo.name != config.name) return
+
+//        for ((name, server) in ServiceRegistry.instance.serverManager?.servers ?: emptyMap()) {
+//            val status = server.getStatus()
+//            val color = when (status) {
+//                Status.RUNNING -> BossBar.Color.GREEN
+//                Status.STOPPED -> BossBar.Color.BLUE
+//                Status.REMOVED -> BossBar.Color.YELLOW
+//                Status.UNKNOWN -> BossBar.Color.RED
+//            }
+//            val title = Component.text("$name: ${status}")
+//            val bossBar = BossBar.bossBar(title, 1.0f, color, BossBar.Overlay.PROGRESS)
+//            event.player.showBossBar(bossBar)
+//        }
 
         pendingReconciliationTask?.let {
             showReconciliationTitle(

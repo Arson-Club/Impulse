@@ -27,11 +27,13 @@ import kotlinx.serialization.Serializable
  * @property servers A list of server configurations. See [ServerConfig]
  * @property serverMaintenanceInterval The interval in seconds between server maintenance tasks
  * @property messages Messages to be displayed to players. See [Messages]
+ * @property disableTransferDisplays Disables the transfer status display messages globally
  */
 @Serializable
 data class Configuration(
     var instanceName: String = "velocity",
     var servers: List<ServerConfig> = listOf(),
     var serverMaintenanceInterval: Long = 300,
-    var messages: Messages = Messages()
+    var messages: Messages = Messages(),
+    var disableTransferDisplays: Boolean = false
 )

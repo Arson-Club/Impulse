@@ -160,6 +160,12 @@ class ConfigManager @Inject constructor(
             liveConfig.messages = value
         }
 
+    var disableTransferDisplays: Boolean
+        get() = liveConfig.disableTransferDisplays
+        private set(value) {
+            liveConfig.disableTransferDisplays = value
+        }
+
     private fun watchTask() {
         logger.trace("ConfigManager: Running watch task")
         var key: WatchKey?

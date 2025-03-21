@@ -24,6 +24,7 @@ import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
 import com.velocitypowered.api.proxy.Player
+import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.server.RegisteredServer
 import io.mockk.every
@@ -43,7 +44,8 @@ class PlayerLifecycleListenerTest {
     @BeforeEach
     fun setUp() {
         logger = mockk<Logger>(relaxed = true)
-        playerLifecycleListener = PlayerLifecycleListener(logger)
+        val proxy = mockk<ProxyServer>(relaxed = true)
+        playerLifecycleListener = PlayerLifecycleListener(proxy, logger)
         ServiceRegistry.instance.reset()
     }
 
