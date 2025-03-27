@@ -18,8 +18,11 @@
 
 package club.arson.impulse
 
+import club.arson.impulse.api.events.PreImpulsePlayerTransferEvent
 import club.arson.impulse.server.Server
 import club.arson.impulse.server.ServerManager
+import com.velocitypowered.api.event.EventManager
+import com.velocitypowered.api.event.ResultedEvent.GenericResult
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
@@ -33,18 +36,32 @@ import io.mockk.verify
 import net.kyori.adventure.text.Component
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.slf4j.Logger
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 class PlayerLifecycleListenerTest {
     private lateinit var playerLifecycleListener: PlayerLifecycleListener
+    private lateinit var proxy: ProxyServer
     private lateinit var logger: Logger
 
     @BeforeEach
     fun setUp() {
         logger = mockk<Logger>(relaxed = true)
         val proxy = mockk<ProxyServer>(relaxed = true)
+        val preTransferResultEvent = PreImpulsePlayerTransferEvent(
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            GenericResult.allowed()
+        )
+        every { proxy.eventManager } returns mockk<EventManager>(relaxed = true).apply {
+            every { fire(any<PreImpulsePlayerTransferEvent>()) } returns CompletableFuture.completedFuture(
+                preTransferResultEvent
+            )
+        }
         playerLifecycleListener = PlayerLifecycleListener(proxy, logger)
         ServiceRegistry.instance.reset()
     }
@@ -125,7 +142,7 @@ class PlayerLifecycleListenerTest {
         every { event.originalServer.serverInfo.name } returns "test"
         every { event.player } returns player
 
-        val server = mockk<Server>()
+        val server = mockk<Server>(relaxed = true)
         every { server.isRunning() } returns true
         every { server.awaitReady() } returns Result.success(Unit)
 
@@ -158,7 +175,7 @@ class PlayerLifecycleListenerTest {
         every { event.originalServer.serverInfo.name } returns "test"
         every { event.player } returns player
 
-        val server = mockk<Server>()
+        val server = mockk<Server>(relaxed = true)
         every { server.isRunning() } returns true
         every { server.awaitReady() } returns Result.failure(RuntimeException("Test"))
 
@@ -250,7 +267,7 @@ class PlayerLifecycleListenerTest {
         every { event.originalServer.serverInfo.name } returns "test"
         every { event.player } returns player
 
-        val server = mockk<Server>()
+        val server = mockk<Server>(relaxed = true)
         every { server.isRunning() } returns false
         every { server.config.lifecycleSettings.allowAutoStart } returns true
         every { server.startServer() } returns Result.success(server)
@@ -283,7 +300,7 @@ class PlayerLifecycleListenerTest {
         every { event.originalServer.serverInfo.name } returns "test"
         every { event.player } returns player
 
-        val server = mockk<Server>()
+        val server = mockk<Server>(relaxed = true)
         every { server.isRunning() } returns false
         every { server.config.lifecycleSettings.allowAutoStart } returns true
         every { server.startServer() } returns Result.failure(RuntimeException("Test"))
@@ -310,5 +327,41 @@ class PlayerLifecycleListenerTest {
         verify(exactly = 0) { player.disconnect(any()) }
         verify(exactly = 1) { player.sendMessage(any()) }
         verify { event.result = ServerResult.denied() }
+    }
+
+    @Test
+    fun testDeniedTransfer() {
+        val proxy = mockk<ProxyServer>(relaxed = true)
+        val preTransferResultEvent = PreImpulsePlayerTransferEvent(
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            GenericResult.denied()
+        )
+        every { proxy.eventManager } returns mockk<EventManager>(relaxed = true).apply {
+            every { fire(any<PreImpulsePlayerTransferEvent>()) } returns CompletableFuture.completedFuture(
+                preTransferResultEvent
+            )
+        }
+        val pll = PlayerLifecycleListener(proxy, logger)
+        val event = mockk<ServerPreConnectEvent>(relaxed = true).apply {
+            every { originalServer.serverInfo.name } returns "test"
+        }
+
+        val server = mockk<Server>(relaxed = true).apply {
+            every { isRunning() } returns true
+            every { awaitReady() } returns Result.success(Unit)
+        }
+
+        val serverManager = mockk<ServerManager>().apply {
+            every { getServer("test") } returns server
+        }
+
+        ServiceRegistry.instance.serverManager = serverManager
+
+        assertDoesNotThrow { pll.handlePlayerConnectEvent(event) }
+        verify(exactly = 0) { server.isRunning() }
+        verify(exactly = 0) { server.awaitReady() }
+        verify(exactly = 1) { logger.debug(any<String>()) }
     }
 }
