@@ -18,18 +18,23 @@
 
 package club.arson.impulse
 
+import club.arson.impulse.api.events.*
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
 import com.velocitypowered.api.proxy.Player
+import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.server.RegisteredServer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
 import javax.inject.Inject
+import kotlin.jvm.optionals.getOrElse
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * Listens for player lifecycle events and processes them
@@ -38,7 +43,7 @@ import javax.inject.Inject
  * @param logger the logger to write messages to
  * @constructor creates a new PlayerLifecycleListener registered with an optional logger.
  */
-class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
+class PlayerLifecycleListener @Inject constructor(private val proxy: ProxyServer, private val logger: Logger) {
     private fun getMM(message: String?): Component {
         return MiniMessage
             .miniMessage()
@@ -51,8 +56,10 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
     private fun handleTimeout(
         player: Player,
         previousServer: RegisteredServer?,
+        nextServer: RegisteredServer,
         message: String? = null
     ): ServerResult {
+        proxy.eventManager.fireAndForget(ImpulsePlayerTransferErrorEvent(previousServer, nextServer, player))
         if (previousServer == null) {
             // This is a workaround so that velocity will continue to hunt the try list
             throw IllegalStateException("Server hit timeout while starting: ${message ?: "Unknown error"}")
@@ -65,13 +72,22 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
 
     fun handlePlayerConnectEvent(event: ServerPreConnectEvent) {
         val server = ServiceRegistry.instance.serverManager?.getServer(event.originalServer.serverInfo.name)
-        if (server != null) {
+        if (server != null && proxy.eventManager.fire(
+                PreImpulsePlayerTransferEvent(
+                    event.previousServer,
+                    event.originalServer,
+                    event.player
+                )
+            ).get().result.isAllowed
+        ) {
             val prevServer =
                 if (event.previousServer != null) ServiceRegistry.instance.serverManager?.getServer(event.previousServer!!.serverInfo.name) else null
+
             var isRunning = server.isRunning()
 
             // if the server is not running and auto start is enabled, start the server
             if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
+                proxy.eventManager.fireAndForget(ServerPreStartEvent(server.serverRef))
                 server.startServer().onSuccess {
                     logger.debug("Server started successfully, allowing connection")
                     isRunning = true
@@ -79,18 +95,27 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                     logger.warn("Error: failed to start server, rejecting connection")
                     logger.warn(it.message)
                 }
+                proxy.eventManager.fireAndForget(ServerStartedEvent(server.serverRef, isRunning))
             }
 
             // If we are started, await ready and transfer the player
             if (isRunning) {
                 server.awaitReady().onSuccess {
                     logger.trace("Server reporting ready, transferring player")
+                    proxy.eventManager.fireAndForget(
+                        ImpulsePlayerTransferEvent(
+                            prevServer?.serverRef,
+                            server.serverRef,
+                            event.player
+                        )
+                    )
                     prevServer?.handleDisconnect(event.player.username)
                 }.onFailure {
                     logger.debug("Server failed to report ready, rejecting connection")
                     event.result = handleTimeout(
                         event.player,
                         event.previousServer,
+                        server.serverRef,
                         ServiceRegistry.instance.configManager?.messages?.startupError
                     )
                 }
@@ -99,6 +124,7 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                 event.result = handleTimeout(
                     event.player,
                     event.previousServer,
+                    event.originalServer,
                     ServiceRegistry.instance.configManager?.messages?.autoStartDisabled
                 )
             } else {
@@ -106,6 +132,7 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                 event.result = handleTimeout(
                     event.player,
                     event.previousServer,
+                    event.originalServer,
                     ServiceRegistry.instance.configManager?.messages?.startupError
                 )
             }
@@ -146,6 +173,34 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                 ?.handleDisconnect(event.player.username)
         }.onFailure {
             logger.debug("unable to determine tha disconnect server for ${event.player.username}")
+        }
+    }
+
+    @Subscribe(order = PostOrder.LAST)
+    fun onInitialServerEvent(event: PlayerChooseInitialServerEvent) {
+        val config = ServiceRegistry.instance.configManager?.transferSettings
+        val initialServer = event.initialServer.getOrNull()?.serverInfo?.name
+
+        // Bail if waiting room not enabled, is not configured, or is not a real server
+        if (config == null || !config.enableWaitingRoom) return
+        if (config.waitingRoom == null) {
+            logger.warn("Waiting room is enabled but no target server is set. Please check your configuration")
+            return
+        }
+        val server = proxy.getServer(config.waitingRoom).getOrElse {
+            logger.warn("Waiting room is not a valid server. ${config.waitingRoom} does not exist")
+            return
+        }
+
+        // TODO: make this isReady
+        val shoudRedirect =
+            ServiceRegistry.instance.serverManager?.servers?.get(initialServer)
+                ?.isRunning() != true && (config.waitingRoomTransferAll || ServiceRegistry.instance.serverManager?.servers?.keys?.contains(
+                event.initialServer.getOrNull()?.serverInfo?.name
+            ) ?: false)
+        if (shoudRedirect) {
+            event.setInitialServer(server)
+            // TODO: trigger some sort of post followup logic
         }
     }
 }

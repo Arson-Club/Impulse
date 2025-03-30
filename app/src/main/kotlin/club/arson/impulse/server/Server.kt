@@ -23,6 +23,7 @@ import club.arson.impulse.ServiceRegistry
 import club.arson.impulse.api.config.ReconcileBehavior
 import club.arson.impulse.api.config.ServerConfig
 import club.arson.impulse.api.config.ShutdownBehavior
+import club.arson.impulse.api.events.AwaitingServerReadyEvent
 import club.arson.impulse.api.server.Broker
 import com.google.inject.Inject
 import com.velocitypowered.api.event.Subscribe
@@ -221,6 +222,7 @@ class Server @Inject constructor(
         val timeout = config.lifecycleSettings.timeouts.startup * 1000
         var isReady = false
 
+        proxyServer.eventManager.fireAndForget(AwaitingServerReadyEvent(serverRef))
         while (!isReady && isRunning() && System.currentTimeMillis() - startTime < timeout) {
             try {
                 serverRef.ping().get()
