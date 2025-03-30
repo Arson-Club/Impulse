@@ -23,6 +23,7 @@ import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
+import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent
 import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult
 import com.velocitypowered.api.proxy.Player
@@ -32,6 +33,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
 import javax.inject.Inject
+import kotlin.jvm.optionals.getOrElse
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * Listens for player lifecycle events and processes them
@@ -170,6 +173,34 @@ class PlayerLifecycleListener @Inject constructor(private val proxy: ProxyServer
                 ?.handleDisconnect(event.player.username)
         }.onFailure {
             logger.debug("unable to determine tha disconnect server for ${event.player.username}")
+        }
+    }
+
+    @Subscribe(order = PostOrder.LAST)
+    fun onInitialServerEvent(event: PlayerChooseInitialServerEvent) {
+        val config = ServiceRegistry.instance.configManager?.transferSettings
+        val initialServer = event.initialServer.getOrNull()?.serverInfo?.name
+
+        // Bail if waiting room not enabled, is not configured, or is not a real server
+        if (config == null || !config.enableWaitingRoom) return
+        if (config.waitingRoom == null) {
+            logger.warn("Waiting room is enabled but no target server is set. Please check your configuration")
+            return
+        }
+        val server = proxy.getServer(config.waitingRoom).getOrElse {
+            logger.warn("Waiting room is not a valid server. ${config.waitingRoom} does not exist")
+            return
+        }
+
+        // TODO: make this isReady
+        val shoudRedirect =
+            ServiceRegistry.instance.serverManager?.servers?.get(initialServer)
+                ?.isRunning() != true && (config.waitingRoomTransferAll || ServiceRegistry.instance.serverManager?.servers?.keys?.contains(
+                event.initialServer.getOrNull()?.serverInfo?.name
+            ) ?: false)
+        if (shoudRedirect) {
+            event.setInitialServer(server)
+            // TODO: trigger some sort of post followup logic
         }
     }
 }

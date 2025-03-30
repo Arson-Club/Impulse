@@ -188,7 +188,7 @@ class TransferStatusListener @Inject constructor(private val logger: Logger) {
         // Bail if the player is not transferring, we explicitly don't have permission to add the bar, or the server has disabled transfer displays
         if (prev == null
             || event.player.getPermissionValue(DISPLAY_TRANSFER_STATUS_PERMISSION_SCOPE) == Tristate.FALSE
-            || ServiceRegistry.instance.configManager?.disableTransferDisplays == true || serverManager?.servers?.get(
+            || ServiceRegistry.instance.configManager?.transferSettings?.enableDisplays == false || serverManager?.servers?.get(
                 prev.serverInfo.name
             )?.config?.transferSettings?.enableDisplays == false
         ) {

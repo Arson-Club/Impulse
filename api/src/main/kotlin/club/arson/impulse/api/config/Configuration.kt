@@ -35,5 +35,5 @@ data class Configuration(
     var servers: List<ServerConfig> = listOf(),
     var serverMaintenanceInterval: Long = 300,
     var messages: Messages = Messages(),
-    var disableTransferDisplays: Boolean = false
+    var transferSettings: TransferSettings = TransferSettings(),
 )

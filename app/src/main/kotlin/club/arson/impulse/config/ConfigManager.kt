@@ -23,6 +23,7 @@ import club.arson.impulse.ServiceRegistry
 import club.arson.impulse.api.config.Configuration
 import club.arson.impulse.api.config.Messages
 import club.arson.impulse.api.config.ServerConfig
+import club.arson.impulse.api.config.TransferSettings
 import club.arson.impulse.api.events.ConfigReloadEvent
 import club.arson.impulse.inject.modules.PluginDir
 import com.charleskorn.kaml.*
@@ -160,10 +161,10 @@ class ConfigManager @Inject constructor(
             liveConfig.messages = value
         }
 
-    var disableTransferDisplays: Boolean
-        get() = liveConfig.disableTransferDisplays
+    var transferSettings: TransferSettings
+        get() = liveConfig.transferSettings
         private set(value) {
-            liveConfig.disableTransferDisplays = value
+            liveConfig.transferSettings = value
         }
 
     private fun watchTask() {
