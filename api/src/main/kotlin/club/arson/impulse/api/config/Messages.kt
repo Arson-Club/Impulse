@@ -35,5 +35,16 @@ data class Messages(
     var startupError: String = "<red>Server is starting, please try again in a moment...</red>\nIf this issue persists, please contact an administrator",
     var reconcileRestartTitle: String = "<red>Server is Restarting...</red>",
     var reconcileRestartMessage: String = "server restart imminent",
-    var autoStartDisabled: String = "<red>Autostart is disabled for this server</red>"
+    var autoStartDisabled: String = "<red>Autostart is disabled for this server</red>",
+    var transferDisplayMessages: TransferDisplayMessages = TransferDisplayMessages()
+)
+
+@Serializable
+data class TransferDisplayMessages(
+    var initializing: String = "<gray>Initializing transfer to <server></gray>",
+    var starting: String = "<gray>Starting <server></gray>",
+    var started: String = "<gray>Started <server></gray>",
+    var awaitingReady: String = "<gray>Waiting for <server> to be ready</gray>",
+    var transferring: String = "<gray>Transferring to <server></gray>",
+    var error: String = "<red>Error while transferring to <server></red>",
 )

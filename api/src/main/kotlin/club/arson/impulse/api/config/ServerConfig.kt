@@ -28,11 +28,13 @@ import kotlinx.serialization.Transient
  * @property type The type of server. Must be either "docker" or "kubernetes"
  * @property lifecycleSettings The lifecycle settings for the server
  * @property config The broker specific configuration, this is not set directly, but rather injected by the config manager
+ * @property disableTransferStatusDisplay Disable transfer status display messages for players on this server
  */
 @Serializable
 data class ServerConfig(
     var name: String,
     var type: String,
     var lifecycleSettings: LifecycleSettings = LifecycleSettings(),
+    var transferSettings: TransferSettings = TransferSettings(),
     @Transient var config: Any? = null
 )

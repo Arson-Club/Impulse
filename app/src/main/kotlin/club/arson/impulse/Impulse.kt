@@ -84,6 +84,7 @@ class Impulse @Inject constructor(
     @Subscribe
     fun onProxyInitialization(event: ProxyInitializeEvent) {
         logger.info("Initializing Impulse")
+
         loadPlugins(getLocalPlugins())
 
         ServiceRegistry.instance.injector = Guice.createInjector(
@@ -99,6 +100,10 @@ class Impulse @Inject constructor(
         proxy.eventManager.register(
             this,
             ServiceRegistry.instance.injector!!.getInstance(PlayerLifecycleListener::class.java)
+        )
+        proxy.eventManager.register(
+            this,
+            ServiceRegistry.instance.injector!!.getInstance(TransferStatusListener::class.java)
         )
 
         // Register custom commands
