@@ -33,7 +33,6 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.slf4j.Logger
 import javax.inject.Inject
-import kotlin.jvm.optionals.getOrElse
 import kotlin.jvm.optionals.getOrNull
 
 /**
@@ -179,25 +178,16 @@ class PlayerLifecycleListener @Inject constructor(private val proxy: ProxyServer
     @Subscribe(order = PostOrder.LAST)
     fun onInitialServerEvent(event: PlayerChooseInitialServerEvent) {
         val config = ServiceRegistry.instance.configManager?.transferSettings
-        val initialServer = event.initialServer.getOrNull()?.serverInfo?.name
-
-        // Bail if waiting room not enabled, is not configured, or is not a real server
-        if (config == null || !config.enableWaitingRoom) return
-        if (config.waitingRoom == null) {
-            logger.warn("Waiting room is enabled but no target server is set. Please check your configuration")
-            return
-        }
-        val server = proxy.getServer(config.waitingRoom).getOrElse {
-            logger.warn("Waiting room is not a valid server. ${config.waitingRoom} does not exist")
-            return
-        }
-
-        // TODO: make this isReady
+        val initialServerName = event.initialServer.getOrNull()?.serverInfo?.name
+        val initialServer = ServiceRegistry.instance.serverManager?.servers?.get(initialServerName)
         val shoudRedirect =
-            ServiceRegistry.instance.serverManager?.servers?.get(initialServer)
-                ?.isRunning() != true && (config.waitingRoomTransferAll || ServiceRegistry.instance.serverManager?.servers?.keys?.contains(
-                event.initialServer.getOrNull()?.serverInfo?.name
-            ) ?: false)
+            initialServer?.isReady() == false && ((initialServer.config.transferSettings.waitingRoomTransferConnected || config?.waitingRoomTransferConnected == true)
+//            ServiceRegistry.instance.serverManager?.servers?.get(initialServer)
+//                ?.isRunning() != true && (config.waitingRoomTransferConnected || ServiceRegistry.instance.serverManager?.servers?.keys?.contains(
+//                event.initialServer.getOrNull()?.serverInfo?.name
+//            ) ?: false)
+
+
         if (shoudRedirect) {
             event.setInitialServer(server)
             // TODO: trigger some sort of post followup logic

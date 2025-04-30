@@ -37,6 +37,7 @@ import net.kyori.adventure.title.Title
 import org.slf4j.Logger
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlin.jvm.optionals.getOrElse
 
 /**
  * Represents a managed server instance
@@ -212,6 +213,15 @@ class Server @Inject constructor(
     }
 
     /**
+     * Get if the server is ready to accept players or not
+     *
+     * @return true if the server is ready else false
+     */
+    fun isReady(): Boolean {
+        return isRunning() && runCatching { serverRef.ping().get() }.isSuccess
+    }
+
+    /**
      * Waits for the server to respond to Minecraft Pings
      *
      * This method is to wait for the server to be ready to accept connections, as opposed to [isRunning] which only checks
@@ -224,10 +234,9 @@ class Server @Inject constructor(
 
         proxyServer.eventManager.fireAndForget(AwaitingServerReadyEvent(serverRef))
         while (!isReady && isRunning() && System.currentTimeMillis() - startTime < timeout) {
-            try {
-                serverRef.ping().get()
+            if (isReady()) {
                 isReady = true
-            } catch (e: Exception) {
+            } else {
                 Thread.sleep(200)
             }
         }
@@ -247,6 +256,25 @@ class Server @Inject constructor(
         if (playerCount <= 0 && config.lifecycleSettings.allowAutoStop && !pinned) {
             scheduleShutdown()
         }
+    }
+
+    fun waitingRoom(): Result<RegisteredServer> {
+        val globalTransferConfig = ServiceRegistry.instance.configManager?.transferSettings
+
+        if (config.transferSettings.enableWaitingRoom == false && globalTransferConfig?.enableWaitingRoom == false) {
+            // TODO: rename this throwable
+            return Result.failure(Throwable("Waiting room is disabled for ${config.name}"))
+        }
+
+        val room = config.transferSettings.waitingRoom ?: globalTransferConfig?.waitingRoom
+        if (room == null) {
+            return Result.failure(Throwable("Waiting room is enabled but no target server is set. Please check the configuration for ${config.name}"))
+        }
+        val waitingRoomServer = proxyServer.getServer(room).getOrElse {
+            return Result.failure(Throwable("Waiting room '$room' is not a valid server."))
+        }
+
+        return Result.success(waitingRoomServer)
     }
 
     /**
