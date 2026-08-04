@@ -1,7 +1,6 @@
 /*
  *  Impulse Server Manager for Velocity
- *  Copyright (c) 2025  Dabb1e
- *
+ *  Copyright (c) 2025 Dabb1e
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
  *  published by the Free Software Foundation, either version 3 of the
@@ -13,11 +12,11 @@
  *  GNU Affero General Public License for more details.
  *
  *  You should have received a copy of the GNU Affero General Public License
- *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.*
  */
 
 package club.arson.impulse
-
+import com.google.inject.Inject
 import com.velocitypowered.api.event.EventTask
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
@@ -28,25 +27,68 @@ import com.velocitypowered.api.proxy.Player
 import com.velocitypowered.api.proxy.server.RegisteredServer
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.title.Title
 import org.slf4j.Logger
-import javax.inject.Inject
+import java.time.Duration
 
 /**
- * Listens for player lifecycle events and processes them
- *
- * Listens for connect and disconnect events so that we can start and stop servers
- * @param logger the logger to write messages to
- * @constructor creates a new PlayerLifecycleListener registered with an optional logger.
+ * Listens for connect and disconnect events so managed servers can be started
+ * before transfer and stopped after becoming empty.
  */
-class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
+class PlayerLifecycleListener @Inject constructor(
+    private val logger: Logger
+) {
+    private val miniMessage = MiniMessage.miniMessage()
+
     private fun getMM(message: String?): Component {
-        return MiniMessage
-            .miniMessage()
-            .deserialize(message ?: "<red>Unknown error</red>")
+        return miniMessage.deserialize(message ?: "<red>Unknown error</red>")
+    }
+
+    private fun showStartingTitle(player: Player, serverName: String) {
+        player.showTitle(
+            Title.title(
+                getMM("<gold>Starting $serverName</gold>"),
+                getMM("<gray>Please wait while the server comes online...</gray>"),
+                Title.Times.times(
+                    Duration.ofMillis(500),
+                    Duration.ofSeconds(10),
+                    Duration.ofMillis(1000)
+                )
+            )
+        )
+    }
+
+    private fun showTransferTitle(player: Player, serverName: String) {
+        player.showTitle(
+            Title.title(
+                getMM("<green>Server Ready</green>"),
+                getMM("<gray>Transferring to $serverName...</gray>"),
+                Title.Times.times(
+                    Duration.ofMillis(100),
+                    Duration.ofSeconds(2),
+                    Duration.ofMillis(300)
+                )
+            )
+        )
+    }
+
+    private fun showFailureTitle(player: Player, serverName: String) {
+        player.showTitle(
+            Title.title(
+                getMM("<red>Server Unavailable</red>"),
+                getMM("<gray>Unable to connect to $serverName.</gray>"),
+                Title.Times.times(
+                    Duration.ofMillis(100),
+                    Duration.ofSeconds(3),
+                    Duration.ofMillis(400)
+                )
+            )
+        )
     }
 
     /**
-     * Either drops the player or sends a message depending on if they are transferring or not
+     * Either lets Velocity continue its initial try list or denies a transfer
+     * and sends the configured message to the player.
      */
     private fun handleTimeout(
         player: Player,
@@ -54,8 +96,9 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
         message: String? = null
     ): ServerResult {
         if (previousServer == null) {
-            // This is a workaround so that velocity will continue to hunt the try list
-            throw IllegalStateException("Server hit timeout while starting: ${message ?: "Unknown error"}")
+            throw IllegalStateException(
+                "Server hit timeout while starting: ${message ?: "Unknown error"}"
+            )
         } else {
             player.sendMessage(getMM(message))
         }
@@ -63,31 +106,48 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
         return ServerResult.denied()
     }
 
+    /**
+     * Processes a connection attempt to a managed server.
+     *
+     * This remains public because the existing unit tests invoke it directly.
+     */
     fun handlePlayerConnectEvent(event: ServerPreConnectEvent) {
-        val server = ServiceRegistry.instance.serverManager?.getServer(event.originalServer.serverInfo.name)
+        val serverName = event.originalServer.serverInfo.name
+        val server = ServiceRegistry.instance.serverManager?.getServer(serverName)
+
         if (server != null) {
-            val prevServer =
-                if (event.previousServer != null) ServiceRegistry.instance.serverManager?.getServer(event.previousServer!!.serverInfo.name) else null
+            val previousManagedServer =
+                if (event.previousServer != null) {
+                    ServiceRegistry.instance.serverManager
+                        ?.getServer(event.previousServer!!.serverInfo.name)
+                } else {
+                    null
+                }
+
             var isRunning = server.isRunning()
 
-            // if the server is not running and auto start is enabled, start the server
             if (!isRunning && server.config.lifecycleSettings.allowAutoStart) {
+                showStartingTitle(event.player, serverName)
+
                 server.startServer().onSuccess {
                     logger.debug("Server started successfully, allowing connection")
                     isRunning = true
                 }.onFailure {
                     logger.warn("Error: failed to start server, rejecting connection")
                     logger.warn(it.message)
+                    showFailureTitle(event.player, serverName)
                 }
             }
 
-            // If we are started, await ready and transfer the player
             if (isRunning) {
                 server.awaitReady().onSuccess {
                     logger.trace("Server reporting ready, transferring player")
-                    prevServer?.handleDisconnect(event.player.username)
+                    showTransferTitle(event.player, serverName)
+                    previousManagedServer?.handleDisconnect(event.player.username)
                 }.onFailure {
                     logger.debug("Server failed to report ready, rejecting connection")
+                    showFailureTitle(event.player, serverName)
+
                     event.result = handleTimeout(
                         event.player,
                         event.previousServer,
@@ -95,14 +155,12 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
                     )
                 }
             } else if (!server.config.lifecycleSettings.allowAutoStart) {
-                // If we are not started and auto start is disabled, reject the connection with the correct message
                 event.result = handleTimeout(
                     event.player,
                     event.previousServer,
                     ServiceRegistry.instance.configManager?.messages?.autoStartDisabled
                 )
             } else {
-                // Otherwise reject with an unknown error
                 event.result = handleTimeout(
                     event.player,
                     event.previousServer,
@@ -115,37 +173,36 @@ class PlayerLifecycleListener @Inject constructor(private val logger: Logger) {
     }
 
     /**
-     * Handles the ServerPreConnectEvent
-     *
-     * This event is fired when a player is about to connect to a server. We use this event to start the server if it is not already running.
-     * @param event the ServerPreConnectEvent
-     * @return an EventTask that will start the server if it is not already running
-     * @see [ServerPreConnectEvent](https://jd.papermc.io/velocity/3.4.0/com/velocitypowered/api/event/player/ServerPreConnectEvent.html)
+     * Starts a managed destination server before Velocity completes transfer.
      */
     @Subscribe(order = PostOrder.FIRST)
     fun onServerPreConnectEvent(event: ServerPreConnectEvent): EventTask {
-        logger.debug("Handling ServerPreConnectEvent for ${event.player.username} from ${event.previousServer?.serverInfo?.name ?: "No Previous Server"} to ${event.originalServer.serverInfo.name}")
+        logger.debug(
+            "Handling ServerPreConnectEvent for ${event.player.username} " +
+                "from ${event.previousServer?.serverInfo?.name ?: "No Previous Server"} " +
+                "to ${event.originalServer.serverInfo.name}"
+        )
+
         return EventTask.async {
             handlePlayerConnectEvent(event)
         }
     }
 
     /**
-     * Handles the DisconnectEvent
-     *
-     * This is fired when a player disconnects from the server. We will use this to schedule a shutdown if the server is empty.
-     * @param event the DisconnectEvent
-     * @see [DisconnectEvent](https://jd.papermc.io/velocity/3.4.0/com/velocitypowered/api/event/connection/DisconnectEvent.html)
+     * Schedules shutdown when the final player leaves a managed server.
      */
     @Subscribe(order = PostOrder.LAST)
     fun onDisconnectEvent(event: DisconnectEvent) {
         runCatching {
             event.player.currentServer.get().server
         }.onSuccess {
-            ServiceRegistry.instance.serverManager?.getServer(it.serverInfo.name)
+            ServiceRegistry.instance.serverManager
+                ?.getServer(it.serverInfo.name)
                 ?.handleDisconnect(event.player.username)
         }.onFailure {
-            logger.debug("unable to determine tha disconnect server for ${event.player.username}")
+            logger.debug(
+                "unable to determine tha disconnect server for ${event.player.username}"
+            )
         }
     }
 }
